@@ -9,9 +9,11 @@ import { Search, Filter } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
+const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
+
 export default function HomePage() {
   const [items, setItems] = useState([])
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(1)
@@ -19,21 +21,34 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // Load categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetch(`${API_URL}/items/categories`)
+        console.log("[v0] Loading categories from:", `${API_URL}/items/categories`)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+        const res = await fetch(`${API_URL}/items/categories`, {
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
         if (!res.ok) {
           throw new Error(`Failed to load categories: ${res.status}`)
         }
+
         const data = await res.json()
-        setCategories(data.categories)
+        console.log("[v0] Categories loaded:", data.categories)
+        setCategories(data.categories || FALLBACK_CATEGORIES)
       } catch (error) {
-        console.error("Failed to load categories:", error)
-        setCategories([])
+        console.error("[v0] Failed to load categories:", error)
+        console.log("[v0] Using fallback categories")
+        setCategories(FALLBACK_CATEGORIES)
       }
     }
+
     loadCategories()
   }, [])
 
@@ -47,11 +62,23 @@ export default function HomePage() {
         if (selectedCategory) url += `&category=${selectedCategory}`
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`
 
-        const res = await fetch(url)
+        console.log("[v0] Loading items from:", url)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+
+        const res = await fetch(url, {
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
         if (!res.ok) {
           throw new Error(`Failed to load items: ${res.status}`)
         }
+
         const data = await res.json()
+        console.log("[v0] Items loaded:", data.items?.length || 0)
 
         if (append) {
           setItems((prev) => [...prev, ...data.items])
@@ -61,7 +88,7 @@ export default function HomePage() {
 
         setHasMore(pageNum < data.pages)
       } catch (error) {
-        console.error("Failed to load items:", error)
+        console.error("[v0] Failed to load items:", error)
         setError(error instanceof Error ? error.message : "Failed to load items")
         if (!append) {
           setItems([])
@@ -93,7 +120,7 @@ export default function HomePage() {
 
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [hasMore, isLoading, loadItems]) // added loadItems to dependency array
+  }, [hasMore, isLoading, loadItems])
 
   return (
     <main className="min-h-screen bg-background">
