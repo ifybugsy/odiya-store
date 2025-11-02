@@ -17,16 +17,21 @@ export default function HomePage() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   // Load categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const res = await fetch(`${API_URL}/items/categories`)
+        if (!res.ok) {
+          throw new Error(`Failed to load categories: ${res.status}`)
+        }
         const data = await res.json()
         setCategories(data.categories)
       } catch (error) {
         console.error("Failed to load categories:", error)
+        setCategories([])
       }
     }
     loadCategories()
@@ -35,8 +40,7 @@ export default function HomePage() {
   // Load items
   const loadItems = useCallback(
     async (pageNum: number, append = false) => {
-      if (isLoading) return
-
+      setError("")
       setIsLoading(true)
       try {
         let url = `${API_URL}/items?page=${pageNum}`
@@ -44,6 +48,9 @@ export default function HomePage() {
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`
 
         const res = await fetch(url)
+        if (!res.ok) {
+          throw new Error(`Failed to load items: ${res.status}`)
+        }
         const data = await res.json()
 
         if (append) {
@@ -55,18 +62,22 @@ export default function HomePage() {
         setHasMore(pageNum < data.pages)
       } catch (error) {
         console.error("Failed to load items:", error)
+        setError(error instanceof Error ? error.message : "Failed to load items")
+        if (!append) {
+          setItems([])
+        }
       } finally {
         setIsLoading(false)
       }
     },
-    [selectedCategory, searchQuery, isLoading],
+    [selectedCategory, searchQuery],
   )
 
   // Load initial items
   useEffect(() => {
     setPage(1)
     loadItems(1, false)
-  }, [selectedCategory, searchQuery])
+  }, [selectedCategory, searchQuery, loadItems])
 
   // Infinite scroll
   useEffect(() => {
@@ -82,7 +93,7 @@ export default function HomePage() {
 
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [hasMore, isLoading, loadItems])
+  }, [hasMore, isLoading, loadItems]) // added loadItems to dependency array
 
   return (
     <main className="min-h-screen bg-background">
@@ -112,32 +123,40 @@ export default function HomePage() {
       </section>
 
       {/* Categories */}
-      <section className="bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            <Button
-              variant={selectedCategory === "" ? "default" : "outline"}
-              onClick={() => setSelectedCategory("")}
-              className="whitespace-nowrap"
-            >
-              All
-            </Button>
-            {categories.map((category) => (
+      {categories.length > 0 && (
+        <section className="bg-white border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category)}
-                className="whitespace-nowrap"
+                variant={selectedCategory === "" ? "default" : "outline"}
+                onClick={() => setSelectedCategory("")}
+                className="whitespace-nowrap flex-shrink-0"
               >
-                {category}
+                All
               </Button>
-            ))}
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category)}
+                  className="whitespace-nowrap flex-shrink-0"
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Items Grid */}
       <section id="items" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {items.map((item) => (
             <ItemCard key={item._id} item={item} />
@@ -156,7 +175,7 @@ export default function HomePage() {
 
         {items.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No items found</p>
+            <p className="text-muted-foreground text-lg">{error ? "Error loading items" : "No items found"}</p>
           </div>
         )}
       </section>

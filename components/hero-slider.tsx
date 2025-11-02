@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const slides = [
@@ -14,6 +13,7 @@ const slides = [
     bgColor: "from-blue-600 to-blue-400",
     cta: "Start Shopping",
     icon: "🛍️",
+    href: "/#items",
   },
   {
     id: 2,
@@ -23,6 +23,7 @@ const slides = [
     bgColor: "from-purple-600 to-purple-400",
     cta: "Become a Seller",
     icon: "📦",
+    href: "/become-seller",
   },
   {
     id: 3,
@@ -32,6 +33,7 @@ const slides = [
     bgColor: "from-green-600 to-green-400",
     cta: "Learn More",
     icon: "🔒",
+    href: "/",
   },
   {
     id: 4,
@@ -41,6 +43,7 @@ const slides = [
     bgColor: "from-orange-600 to-orange-400",
     cta: "Browse Categories",
     icon: "🎯",
+    href: "/#items",
   },
 ]
 
@@ -87,7 +90,7 @@ export default function HeroSlider() {
           <div
             key={s.id}
             className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-between px-8 md:px-16 bg-gradient-to-r ${s.bgColor} ${
-              index === currentSlide ? "opacity-100" : "opacity-0"
+              index === currentSlide ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
             {/* Content */}
@@ -96,7 +99,7 @@ export default function HeroSlider() {
               <h1 className="text-4xl md:text-5xl font-bold mb-3 text-balance">{s.title}</h1>
               <p className="text-xl md:text-2xl font-semibold mb-4 opacity-90">{s.subtitle}</p>
               <p className="text-base md:text-lg mb-8 opacity-85 max-w-lg">{s.description}</p>
-              <Link href={index === 1 ? "/become-seller" : index === 0 ? "/#items" : "/"}>
+              <Link href={s.href}>
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
                   {s.cta}
                 </Button>
@@ -112,24 +115,9 @@ export default function HeroSlider() {
       </div>
 
       {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 transition rounded-full p-2 backdrop-blur-sm"
-        aria-label="Previous slide"
-      >
-        <ChevronLeft className="w-6 h-6 text-white" />
-      </button>
-
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 transition rounded-full p-2 backdrop-blur-sm"
-        aria-label="Next slide"
-      >
-        <ChevronRight className="w-6 h-6 text-white" />
-      </button>
 
       {/* Dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20" role="tablist">
         {slides.map((_, index) => (
           <button
             key={index}
@@ -138,6 +126,9 @@ export default function HeroSlider() {
               index === currentSlide ? "bg-white w-8" : "bg-white/50 hover:bg-white/75"
             }`}
             aria-label={`Go to slide ${index + 1}`}
+            aria-selected={index === currentSlide}
+            role="tab"
+            type="button"
           />
         ))}
       </div>

@@ -12,11 +12,30 @@ export default function AboutPage() {
 
           <Card className="p-8 mb-8 space-y-6">
             <section>
+              <h2 className="text-2xl font-bold mb-4">Our Story</h2>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Odiya Store was born from the vision of <strong>Ifybugsy Digital Technologies Limited</strong>, a
+                forward-thinking tech company dedicated to revolutionizing digital commerce in Africa. Founded by
+                <strong> Ifeanyi David Onyejiaka</strong>, an accomplished Software Engineer, Odiya Store represents a
+                commitment to making technology accessible and empowering small businesses to thrive in the digital
+                economy.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                The development of Odiya Store was motivated by a simple yet powerful observation: small business owners
+                and entrepreneurs across Nigeria lacked an easy-to-use, trust-based marketplace to reach customers and
+                scale their operations. Traditional platforms were either too complex, too expensive, or didn't cater to
+                the unique needs of Nigerian merchants. We saw an opportunity to change this narrative.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Odiya Store is a Facebook-like marketplace that empowers buyers and sellers across Nigeria to connect,
-                trade, and grow together. We believe in making online commerce accessible, transparent, and beneficial
-                for everyone.
+                At Ifybugsy Digital Technologies Limited, our mission is to make a meaningful difference in technology
+                by empowering small businesses and individuals with tools that simplify commerce, foster trust, and
+                unlock economic opportunities. Through Odiya Store, we're building a Facebook-like marketplace that
+                connects buyers and sellers across Nigeria, making online commerce accessible, transparent, and
+                beneficial for everyone.
               </p>
             </section>
 
