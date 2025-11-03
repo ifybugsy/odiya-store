@@ -1,6 +1,6 @@
 "use client"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
 
 export const apiConfig = {
   baseURL: API_URL,
