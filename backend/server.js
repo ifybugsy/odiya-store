@@ -2,6 +2,8 @@ import express from "express"
 import mongoose from "mongoose"
 import cors from "cors"
 import dotenv from "dotenv"
+import bcrypt from "bcryptjs"
+import User from "./models/User.js" // <-- Make sure this path is correct
 import authRoutes from "./routes/auth.js"
 import itemRoutes from "./routes/items.js"
 import adminRoutes from "./routes/admin.js"
@@ -48,7 +50,28 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }))
 // Database Connection
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/odiya-store")
-  .then(() => console.log("MongoDB connected"))
+  .then(async () => {
+    console.log("MongoDB connected")
+
+    // ✅ Auto-create admin user if not exists
+    try {
+      const adminExists = await User.findOne({ email: "admin@odiya.com" })
+      if (!adminExists) {
+        const hashedPassword = await bcrypt.hash("admin123", 10)
+        await User.create({
+          name: "Admin",
+          email: "admin@odiya.com",
+          password: hashedPassword,
+          isAdmin: true,
+        })
+        console.log("✅ Default admin user created: admin@odiya.com / admin123")
+      } else {
+        console.log("✅ Admin already exists")
+      }
+    } catch (err) {
+      console.error("Error creating admin:", err)
+    }
+  })
   .catch((err) => console.log("MongoDB connection error:", err))
 
 // Routes
