@@ -81,4 +81,72 @@ router.get("/my-items", async (req, res) => {
   }
 })
 
+router.put("/promote-admin", async (req, res) => {
+  try {
+    const { targetEmail, setupToken } = req.body
+
+    if (!targetEmail) {
+      return res.status(400).json({ error: "Target email is required" })
+    }
+
+    const isValidSetupToken = setupToken === process.env.ADMIN_SETUP_TOKEN
+    const isExistingAdmin = req.user?.isAdmin === true
+
+    if (!isValidSetupToken && !isExistingAdmin) {
+      return res.status(403).json({ error: "Insufficient permissions to promote users" })
+    }
+
+    const normalizedEmail = targetEmail.toLowerCase().trim()
+    const user = await User.findOne({ email: normalizedEmail })
+
+    if (!user) {
+      return res.status(404).json({ error: `User with email ${normalizedEmail} not found` })
+    }
+
+    if (user.isAdmin) {
+      return res.status(400).json({ error: "User is already an admin" })
+    }
+
+    user.isAdmin = true
+    await user.save()
+
+    console.log(`[v0] User promoted to admin: ${normalizedEmail} by ${req.user?.email || "setup-token"}`)
+
+    res.json({
+      message: `${normalizedEmail} has been promoted to admin`,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isAdmin: user.isAdmin,
+      },
+    })
+  } catch (error) {
+    console.error("[v0] Admin promotion error:", error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.get("/check-admin/:email", async (req, res) => {
+  try {
+    const normalizedEmail = req.params.email.toLowerCase().trim()
+    const user = await User.findOne({ email: normalizedEmail }).select("email isAdmin isSuspended")
+
+    if (!user) {
+      return res.json({ exists: false, isAdmin: false })
+    }
+
+    res.json({
+      exists: true,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      isSuspended: user.isSuspended,
+    })
+  } catch (error) {
+    console.error("[v0] Check admin error:", error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 export default router

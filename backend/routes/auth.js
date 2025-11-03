@@ -66,20 +66,32 @@ router.post("/login", async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim()
 
+    console.log(`[v0] Login attempt for: ${normalizedEmail}`)
+
     const user = await User.findOne({ email: normalizedEmail })
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" })
+      console.warn(`[v0] Login failed: User not found - ${normalizedEmail}`)
+      return res.status(401).json({
+        error: "Invalid email or password",
+        debug: process.env.NODE_ENV === "development" ? "User account not found" : undefined,
+      })
     }
 
     if (user.isSuspended) {
-      return res.status(403).json({ error: "Your account has been suspended" })
+      console.warn(`[v0] Login blocked: Account suspended - ${normalizedEmail}`)
+      return res.status(403).json({ error: "Your account has been suspended. Contact support." })
     }
 
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {
-      console.error(`[v0] Login failed: Password mismatch for ${normalizedEmail}`)
-      return res.status(401).json({ error: "Invalid email or password" })
+      console.warn(`[v0] Login failed: Invalid password for - ${normalizedEmail}`)
+      return res.status(401).json({
+        error: "Invalid email or password",
+        debug: process.env.NODE_ENV === "development" ? "Password verification failed" : undefined,
+      })
     }
+
+    console.log(`[v0] Login successful: ${normalizedEmail} | isAdmin: ${user.isAdmin} | isSeller: ${user.isSeller}`)
 
     const token = jwt.sign(
       { id: user._id, email: user.email, isSeller: user.isSeller, isAdmin: user.isAdmin },
@@ -100,8 +112,11 @@ router.post("/login", async (req, res) => {
       },
     })
   } catch (error) {
-    console.error("[v0] Login error:", error.message)
-    res.status(500).json({ error: error.message })
+    console.error("[v0] Login exception:", error.message, error.stack)
+    res.status(500).json({
+      error: "Server error during login",
+      debug: process.env.NODE_ENV === "development" ? error.message : undefined,
+    })
   }
 })
 
