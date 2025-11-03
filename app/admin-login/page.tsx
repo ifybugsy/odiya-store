@@ -92,20 +92,46 @@ export default function AdminLoginPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+      const normalizedEmail = email.trim().toLowerCase()
+
+      console.log("[v0] Admin login attempt:", { email: normalizedEmail, apiUrl })
 
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
       })
 
       const data = await response.json()
+      console.log("[v0] Login response status:", response.status, "data:", data)
 
       if (!response.ok) {
         if (response.status === 401) {
-          setErrors([{ field: "general", message: "Invalid email or password" }])
+          const errorMsg =
+            data.error === "Invalid credentials"
+              ? "Invalid email or password. Please verify your credentials and try again."
+              : data.error || "Authentication failed"
+
+          console.error("[v0] Login failed with 401:", {
+            email: normalizedEmail,
+            error: data.error,
+            timestamp: new Date().toISOString(),
+          })
+
+          setErrors([
+            {
+              field: "general",
+              message: errorMsg,
+            },
+            {
+              field: "general",
+              message:
+                "Troubleshooting tip: Check the console (F12) for detailed error logs. Admin user may need to be created using the backend script.",
+            },
+          ])
+
           setLoginAttempts((prev) => prev + 1)
 
           if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
@@ -119,34 +145,67 @@ export default function AdminLoginPage() {
             ])
           }
         } else if (response.status === 403) {
+          console.error("[v0] Access denied - user is not admin:", data)
           setErrors([
             {
               field: "general",
-              message: data.error || "Admin access denied. You do not have administrative privileges.",
+              message: "Admin access denied. This user account does not have administrator privileges.",
+            },
+            {
+              field: "general",
+              message: "Contact your system administrator to grant admin access to this account.",
             },
           ])
         } else if (response.status === 400) {
-          setErrors([{ field: "general", message: data.error || "Invalid request. Please try again." }])
+          console.error("[v0] Bad request:", data)
+          setErrors([{ field: "general", message: data.error || "Invalid request. Please check your input." }])
+        } else if (response.status === 500) {
+          console.error("[v0] Server error:", data)
+          setErrors([
+            {
+              field: "general",
+              message: "Server error. Please try again later or contact support.",
+            },
+          ])
         } else {
+          console.error("[v0] Unknown error status:", response.status, data)
           setErrors([{ field: "general", message: "Login failed. Please try again later." }])
         }
         return
       }
 
-      if (!data.user?.isAdmin) {
+      if (!data.user) {
+        console.error("[v0] No user in response:", data)
+        setErrors([{ field: "general", message: "Login response incomplete. Please try again." }])
+        return
+      }
+
+      if (!data.user.isAdmin) {
+        console.error("[v0] User is not admin:", { email: normalizedEmail, isAdmin: data.user.isAdmin })
         setErrors([
           {
             field: "general",
-            message: "You do not have administrative privileges. Admin access is restricted.",
+            message: "You do not have administrative privileges.",
+          },
+          {
+            field: "general",
+            message: `This account (${data.user.email}) is not registered as an administrator.`,
           },
         ])
         return
       }
 
       if (!data.token) {
+        console.error("[v0] No token in response:", data)
         setErrors([{ field: "general", message: "Authentication failed. No token received." }])
         return
       }
+
+      console.log("[v0] Admin login successful:", {
+        email: data.user.email,
+        isAdmin: data.user.isAdmin,
+        timestamp: new Date().toISOString(),
+      })
 
       localStorage.setItem("authToken", data.token)
       localStorage.setItem(
@@ -165,11 +224,21 @@ export default function AdminLoginPage() {
       // Navigate to admin dashboard
       router.push("/admin")
     } catch (err) {
-      console.error("[v0] Admin login error:", err)
+      const errorMessage = err instanceof Error ? err.message : "Unknown error"
+      console.error("[v0] Admin login exception:", {
+        error: errorMessage,
+        stack: err instanceof Error ? err.stack : "No stack trace",
+        timestamp: new Date().toISOString(),
+      })
+
       setErrors([
         {
           field: "general",
           message: "Network error. Please check your connection and try again.",
+        },
+        {
+          field: "general",
+          message: `Technical details: ${errorMessage}. Check browser console (F12) for more information.`,
         },
       ])
     } finally {

@@ -13,7 +13,9 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "All fields are required" })
     }
 
-    const existingUser = await User.findOne({ email })
+    const normalizedEmail = email.toLowerCase().trim()
+
+    const existingUser = await User.findOne({ email: normalizedEmail })
     if (existingUser) {
       return res.status(400).json({ error: "Email already registered" })
     }
@@ -21,9 +23,10 @@ router.post("/register", async (req, res) => {
     const user = new User({
       firstName,
       lastName,
-      email,
+      email: normalizedEmail,
       phone,
       password,
+      // Password will be automatically hashed by the pre-save middleware
     })
 
     await user.save()
@@ -43,9 +46,11 @@ router.post("/register", async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         isSeller: user.isSeller,
+        isAdmin: user.isAdmin,
       },
     })
   } catch (error) {
+    console.error("[v0] Register error:", error.message)
     res.status(500).json({ error: error.message })
   }
 })
@@ -59,9 +64,11 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" })
     }
 
-    const user = await User.findOne({ email })
+    const normalizedEmail = email.toLowerCase().trim()
+
+    const user = await User.findOne({ email: normalizedEmail })
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" })
+      return res.status(401).json({ error: "Invalid email or password" })
     }
 
     if (user.isSuspended) {
@@ -70,7 +77,8 @@ router.post("/login", async (req, res) => {
 
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" })
+      console.error(`[v0] Login failed: Password mismatch for ${normalizedEmail}`)
+      return res.status(401).json({ error: "Invalid email or password" })
     }
 
     const token = jwt.sign(
@@ -92,6 +100,7 @@ router.post("/login", async (req, res) => {
       },
     })
   } catch (error) {
+    console.error("[v0] Login error:", error.message)
     res.status(500).json({ error: error.message })
   }
 })
