@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
@@ -10,10 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/api"
 
 export default function BecomeSellerPage() {
-  const { user, token } = useAuth()
+  const { user, token, setUser } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -24,12 +24,6 @@ export default function BecomeSellerPage() {
     bankAccountName: "",
     bankName: "",
   })
-
-  useEffect(() => {
-    if (user?.isSeller) {
-      router.push("/dashboard")
-    }
-  }, [user?.isSeller, router])
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -57,6 +51,13 @@ export default function BecomeSellerPage() {
         return
       }
 
+      const data = await res.json()
+
+      setUser({
+        ...user!,
+        isSeller: true,
+      })
+
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message)
@@ -77,6 +78,7 @@ export default function BecomeSellerPage() {
   }
 
   if (user.isSeller) {
+    router.push("/dashboard")
     return null
   }
 
