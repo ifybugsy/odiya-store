@@ -44,6 +44,15 @@ const allowedOrigins = [
 )
   */
 
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+
 app.use(express.json())
 app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
