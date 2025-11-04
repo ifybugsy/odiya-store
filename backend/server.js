@@ -23,7 +23,7 @@ const allowedOrigins = [
 ].filter(Boolean) // Remove undefined values
 
 // Middleware
-app.use(
+/*app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, curl requests)
@@ -42,6 +42,18 @@ app.use(
     maxAge: 86400, // 24 hours
   }),
 )
+  */
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+
+
 app.use(express.json())
 app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
