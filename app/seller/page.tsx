@@ -6,9 +6,9 @@ import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
-import { MessageCircle } from "lucide-react"
+import { MessageCircle, RefreshCw } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function SellerPage() {
   const { user, token } = useAuth()
@@ -17,6 +17,9 @@ export default function SellerPage() {
   const [loading, setLoading] = useState(true)
   const [selectedMessage, setSelectedMessage] = useState<any>(null)
   const [response, setResponse] = useState("")
+  const [responding, setResponding] = useState(false)
+  const [responseMessage, setResponseMessage] = useState("")
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     if (!user?.isSeller || !token) {
@@ -25,6 +28,8 @@ export default function SellerPage() {
     }
 
     loadMessages()
+    const interval = setInterval(loadMessages, 5000)
+    return () => clearInterval(interval)
   }, [user, token, router])
 
   const loadMessages = async () => {
@@ -33,10 +38,12 @@ export default function SellerPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
-        setMessages(await res.json())
+        const newMessages = await res.json()
+        setMessages(newMessages)
+        setRefreshing(false)
       }
     } catch (error) {
-      console.error("Failed to load messages:", error)
+      console.error("[v0] Failed to load messages:", error)
     } finally {
       setLoading(false)
     }
@@ -45,8 +52,11 @@ export default function SellerPage() {
   const handleRespond = async () => {
     if (!response.trim() || !selectedMessage) return
 
+    setResponding(true)
+    setResponseMessage("")
+
     try {
-      await fetch(`${API_URL}/messages/${selectedMessage._id}/respond`, {
+      const res = await fetch(`${API_URL}/messages/${selectedMessage._id}/respond`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -54,12 +64,28 @@ export default function SellerPage() {
         },
         body: JSON.stringify({ response }),
       })
-      setResponse("")
-      setSelectedMessage(null)
-      loadMessages()
+
+      if (res.ok) {
+        setResponseMessage("✓ Response sent successfully!")
+        setTimeout(() => {
+          setResponse("")
+          setResponseMessage("")
+          loadMessages()
+        }, 1500)
+      } else {
+        setResponseMessage("Failed to send response. Please try again.")
+      }
     } catch (error) {
-      console.error("Failed to send response:", error)
+      console.error("[v0] Failed to send response:", error)
+      setResponseMessage("Error sending response. Please try again.")
+    } finally {
+      setResponding(false)
     }
+  }
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true)
+    await loadMessages()
   }
 
   if (loading) {
@@ -78,10 +104,16 @@ export default function SellerPage() {
       <Navbar />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold mb-8 flex items-center gap-2">
-            <MessageCircle className="w-8 h-8" />
-            Messages from Buyers
-          </h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <MessageCircle className="w-8 h-8" />
+              Messages from Buyers
+            </h1>
+            <Button onClick={handleManualRefresh} variant="outline" size="sm" disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </Button>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Messages List */}
@@ -95,7 +127,11 @@ export default function SellerPage() {
                   {messages.map((msg) => (
                     <Card
                       key={msg._id}
-                      onClick={() => setSelectedMessage(msg)}
+                      onClick={() => {
+                        setSelectedMessage(msg)
+                        setResponse("")
+                        setResponseMessage("")
+                      }}
                       className={`p-4 cursor-pointer transition ${
                         selectedMessage?._id === msg._id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                       }`}
@@ -103,6 +139,7 @@ export default function SellerPage() {
                       <p className="font-semibold text-sm">{msg.senderName}</p>
                       <p className="text-xs text-muted-foreground">{msg.itemId?.title}</p>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{msg.message}</p>
+                      {msg.sellerResponse && <div className="text-xs text-green-600 mt-1 font-medium">✓ Responded</div>}
                     </Card>
                   ))}
                 </div>
@@ -120,10 +157,16 @@ export default function SellerPage() {
                         <span className="font-medium">Item:</span> {selectedMessage.itemId?.title}
                       </p>
                       <p>
-                        <span className="font-medium">Phone:</span> {selectedMessage.senderPhone}
+                        <span className="font-medium">Phone:</span>{" "}
+                        <a href={`tel:${selectedMessage.senderPhone}`} className="text-primary hover:underline">
+                          {selectedMessage.senderPhone}
+                        </a>
                       </p>
                       <p>
-                        <span className="font-medium">Email:</span> {selectedMessage.senderEmail}
+                        <span className="font-medium">Email:</span>{" "}
+                        <a href={`mailto:${selectedMessage.senderEmail}`} className="text-primary hover:underline">
+                          {selectedMessage.senderEmail}
+                        </a>
                       </p>
                     </div>
                   </div>
@@ -147,11 +190,23 @@ export default function SellerPage() {
                         value={response}
                         onChange={(e) => setResponse(e.target.value)}
                         placeholder="Type your response..."
-                        className="w-full border border-border rounded-md p-2 mb-3"
+                        className="w-full border border-border rounded-md p-2 mb-3 disabled:opacity-50"
                         rows={4}
+                        disabled={responding}
                       />
-                      <Button onClick={handleRespond} className="bg-primary hover:bg-primary/90">
-                        Send Response
+                      {responseMessage && (
+                        <div
+                          className={`text-sm p-2 rounded mb-3 ${responseMessage.includes("✓") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                        >
+                          {responseMessage}
+                        </div>
+                      )}
+                      <Button
+                        onClick={handleRespond}
+                        className="bg-primary hover:bg-primary/90"
+                        disabled={responding || !response.trim()}
+                      >
+                        {responding ? "Sending..." : "Send Response"}
                       </Button>
                     </div>
                   )}

@@ -8,9 +8,9 @@ import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin } from "lucide-react"
+import { Star, MapPin, AlertTriangle, Phone } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function ItemPage() {
   const params = useParams()
@@ -23,6 +23,8 @@ export default function ItemPage() {
     senderEmail: "",
     message: "",
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState("")
 
   useEffect(() => {
     const loadItem = async () => {
@@ -41,8 +43,11 @@ export default function ItemPage() {
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitting(true)
+    setSubmitMessage("")
+
     try {
-      await fetch(`${API_URL}/messages`, {
+      const res = await fetch(`${API_URL}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,11 +55,24 @@ export default function ItemPage() {
           ...contactData,
         }),
       })
-      alert("Message sent successfully!")
-      setContactData({ senderName: "", senderPhone: "", senderEmail: "", message: "" })
-      setShowContactForm(false)
+
+      if (res.ok) {
+        setSubmitMessage("✓ Message sent successfully!")
+        setTimeout(() => {
+          setContactData({ senderName: "", senderPhone: "", senderEmail: "", message: "" })
+          setShowContactForm(false)
+          setSubmitMessage("")
+        }, 1500)
+      } else {
+        const error = await res.json()
+        setSubmitMessage("Failed to send message. Please try again.")
+        console.error("Send error:", error)
+      }
     } catch (error) {
+      setSubmitMessage("Error sending message. Please try again.")
       console.error("Failed to send message:", error)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -158,31 +176,64 @@ export default function ItemPage() {
                       </div>
                     </div>
                   </div>
+
+                  {item.sellerId?.phone && (
+                    <div className="bg-blue-50 rounded p-3 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Phone className="w-4 h-4 text-blue-600" />
+                        <p className="text-xs font-medium text-blue-600">Contact Seller</p>
+                      </div>
+                      <a
+                        href={`tel:${item.sellerId.phone}`}
+                        className="text-sm font-semibold text-blue-700 hover:underline"
+                      >
+                        {item.sellerId.phone}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   onClick={() => setShowContactForm(!showContactForm)}
                   className="w-full bg-primary hover:bg-primary/90 text-white"
                 >
-                  Contact Seller
+                  {showContactForm ? "Close" : "Contact Seller"}
                 </Button>
               </Card>
 
               {showContactForm && (
                 <Card className="p-6 mt-4">
                   <h3 className="font-semibold mb-4">Send Message</h3>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    <div className="flex gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-amber-900 mb-1">Buyer Safety Tips</p>
+                        <ul className="text-amber-800 space-y-1 text-xs">
+                          <li>• Verify goods before making payment</li>
+                          <li>• Meet in safe, public places</li>
+                          <li>• Never share personal banking details</li>
+                          <li>• Use secure payment methods</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
                   <form onSubmit={handleContactSubmit} className="space-y-3">
                     <Input
                       placeholder="Your Name"
                       value={contactData.senderName}
                       onChange={(e) => setContactData({ ...contactData, senderName: e.target.value })}
                       required
+                      disabled={submitting}
                     />
                     <Input
                       placeholder="Your Phone"
                       value={contactData.senderPhone}
                       onChange={(e) => setContactData({ ...contactData, senderPhone: e.target.value })}
                       required
+                      disabled={submitting}
                     />
                     <Input
                       placeholder="Your Email"
@@ -190,17 +241,28 @@ export default function ItemPage() {
                       value={contactData.senderEmail}
                       onChange={(e) => setContactData({ ...contactData, senderEmail: e.target.value })}
                       required
+                      disabled={submitting}
                     />
                     <textarea
                       placeholder="Your Message"
                       value={contactData.message}
                       onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
-                      className="w-full border border-border rounded-md p-2 text-sm"
+                      className="w-full border border-border rounded-md p-2 text-sm disabled:opacity-50"
                       rows={4}
                       required
+                      disabled={submitting}
                     />
-                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                      Send Message
+
+                    {submitMessage && (
+                      <div
+                        className={`text-sm p-2 rounded ${submitMessage.includes("✓") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                      >
+                        {submitMessage}
+                      </div>
+                    )}
+
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={submitting}>
+                      {submitting ? "Sending..." : "Send Message"}
                     </Button>
                   </form>
                 </Card>
