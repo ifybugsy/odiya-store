@@ -14,6 +14,8 @@ dotenv.config()
 
 const app = express()
 
+const isDevelopment = process.env.NODE_ENV === "development" || process.env.DEVELOPMENT_MODE === "true"
+
 // Define allowed origins for CORS
 const allowedOrigins = [
   "http://localhost:3000",
@@ -22,13 +24,18 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean) // Remove undefined values
 
-// Middleware
-/*app.use(
+app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, Postman, curl requests)
       if (!origin) return callback(null, true)
 
+      if (isDevelopment) {
+        console.warn("[DEV-MODE] CORS bypass enabled - all origins allowed (TESTING ONLY)")
+        return callback(null, true)
+      }
+
+      // Production CORS enforcement
       if (allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
@@ -42,17 +49,6 @@ const allowedOrigins = [
     maxAge: 86400, // 24 hours
   }),
 )
-  */
-
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-
 app.use(express.json())
 app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
