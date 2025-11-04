@@ -65,15 +65,34 @@ router.post("/login", async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim()
+    const isDevelopmentMode = process.env.DEVELOPMENT_MODE === "true"
 
-    console.log(`[v0] Login attempt for: ${normalizedEmail}`)
+    console.log(`[v0] Login attempt for: ${normalizedEmail} | DevMode: ${isDevelopmentMode}`)
 
-    const user = await User.findOne({ email: normalizedEmail })
+    let user = await User.findOne({ email: normalizedEmail })
+
+    if (isDevelopmentMode && !user && normalizedEmail === "admin@test.com") {
+      console.log("[v0] [DEV-MODE] Creating temporary admin user for testing")
+      user = new User({
+        firstName: "Admin",
+        lastName: "Test",
+        email: normalizedEmail,
+        phone: "0000000000",
+        password: "test123",
+        isAdmin: true,
+        isSeller: false,
+      })
+      await user.save()
+    }
+
     if (!user) {
       console.warn(`[v0] Login failed: User not found - ${normalizedEmail}`)
       return res.status(401).json({
         error: "Invalid email or password",
-        debug: process.env.NODE_ENV === "development" ? "User account not found" : undefined,
+        debug:
+          process.env.NODE_ENV === "development"
+            ? `User account not found. In dev mode, try admin@test.com / test123`
+            : undefined,
       })
     }
 
