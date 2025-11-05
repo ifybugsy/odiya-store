@@ -8,7 +8,7 @@ import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin, AlertTriangle, Phone } from "lucide-react"
+import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -17,6 +17,7 @@ export default function ItemPage() {
   const [item, setItem] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showContactForm, setShowContactForm] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [contactData, setContactData] = useState({
     senderName: "",
     senderPhone: "",
@@ -76,6 +77,18 @@ export default function ItemPage() {
     }
   }
 
+  const handlePrevImage = () => {
+    if (item?.images?.length) {
+      setCurrentImageIndex((prev) => (prev === 0 ? item.images.length - 1 : prev - 1))
+    }
+  }
+
+  const handleNextImage = () => {
+    if (item?.images?.length) {
+      setCurrentImageIndex((prev) => (prev === item.images.length - 1 ? 0 : prev + 1))
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -103,6 +116,9 @@ export default function ItemPage() {
     currency: "NGN",
   }).format(item.price)
 
+  const hasMultipleImages = item.images && item.images.length > 1
+  const currentImage = item.images?.[currentImageIndex] || "/placeholder.svg"
+
   return (
     <>
       <Navbar />
@@ -111,23 +127,50 @@ export default function ItemPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Images */}
             <div className="lg:col-span-2">
-              <div className="bg-muted rounded-lg overflow-hidden h-96 flex items-center justify-center mb-4">
-                {item.images && item.images.length > 0 ? (
+              <div className="relative">
+                <div className="bg-muted rounded-lg overflow-hidden h-96 flex items-center justify-center mb-4">
                   <img
-                    src={item.images[0] || "/placeholder.svg"}
+                    src={currentImage || "/placeholder.svg"}
                     alt={item.title}
                     className="w-full h-full object-cover"
                   />
-                ) : (
-                  <div className="text-muted-foreground">No image available</div>
+                </div>
+
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      onClick={handlePrevImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded text-sm">
+                      {currentImageIndex + 1} / {item.images.length}
+                    </div>
+                  </>
                 )}
               </div>
+
               {item.images && item.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2">
                   {item.images.map((img: string, idx: number) => (
-                    <div key={idx} className="bg-muted rounded h-20 flex items-center justify-center">
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`bg-muted rounded h-20 flex items-center justify-center overflow-hidden border-2 transition ${
+                        idx === currentImageIndex ? "border-primary" : "border-transparent"
+                      }`}
+                    >
                       <img src={img || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -158,10 +201,18 @@ export default function ItemPage() {
                 <div className="border-t border-border pt-4">
                   <p className="text-sm font-semibold mb-3">Seller Information</p>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
-                      {item.sellerId?.firstName[0]}
-                      {item.sellerId?.lastName[0]}
-                    </div>
+                    {item.sellerId?.profileImage ? (
+                      <img
+                        src={item.sellerId.profileImage || "/placeholder.svg"}
+                        alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
+                        {item.sellerId?.firstName[0]}
+                        {item.sellerId?.lastName[0]}
+                      </div>
+                    )}
                     <div>
                       <p className="font-semibold text-sm">
                         {item.sellerId?.firstName} {item.sellerId?.lastName}

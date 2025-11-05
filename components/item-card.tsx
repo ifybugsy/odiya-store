@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star } from "lucide-react"
 
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -73,10 +73,32 @@ export default function ItemCard({ item }: { item: any }) {
           <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
           <p className="text-xs text-muted-foreground">{item.location}</p>
           <div className="flex items-center gap-2 mt-2">
-            <div className="w-6 h-6 rounded-full bg-muted" />
-            <p className="text-xs truncate">
+            {item.sellerId?.profileImage ? (
+              <img
+                src={item.sellerId.profileImage || "/placeholder.svg"}
+                alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
+                className="w-6 h-6 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
+                {item.sellerId?.firstName[0]}
+              </div>
+            )}
+            <p className="text-xs truncate flex-1">
               {item.sellerId?.firstName} {item.sellerId?.lastName}
             </p>
+            {item.sellerId?.rating > 0 && (
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-3 h-3 ${
+                      i < Math.floor(item.sellerId?.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Card>

@@ -9,14 +9,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
+import { Upload, X } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function EditProfilePage() {
   const { user, token, setUser } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>("")
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -47,6 +51,10 @@ export default function EditProfilePage() {
             city: profile.city || "",
             state: profile.state || "",
           })
+          if (profile.profileImage) {
+            setProfileImage(profile.profileImage)
+            setImagePreview(profile.profileImage)
+          }
         }
       } catch (err) {
         console.error("Failed to load profile:", err)
@@ -60,19 +68,70 @@ export default function EditProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image must be less than 5MB")
+        return
+      }
+      if (!file.type.startsWith("image/")) {
+        setError("File must be an image")
+        return
+      }
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      setError("")
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview("")
+    setProfileImage(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
+      let profileImageUrl = profileImage
+      if (imageFile) {
+        const imageFormData = new FormData()
+        imageFormData.append("file", imageFile)
+
+        const uploadRes = await fetch(`${API_URL}/upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: imageFormData,
+        })
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json()
+          profileImageUrl = uploadData.url
+        } else {
+          throw new Error("Failed to upload image")
+        }
+      }
+
       const res = await fetch(`${API_URL}/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          profileImage: profileImageUrl,
+        }),
       })
 
       if (!res.ok) {
@@ -108,6 +167,42 @@ export default function EditProfilePage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-3">Profile Picture</label>
+                <div className="flex items-start gap-4">
+                  {imagePreview && (
+                    <div className="relative">
+                      <img
+                        src={imagePreview || "/placeholder.svg"}
+                        alt="Profile preview"
+                        className="w-24 h-24 rounded-lg object-cover border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute -top-2 -right-2 bg-destructive text-white p-1 rounded-full hover:bg-destructive/90"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-6 cursor-pointer hover:border-primary transition">
+                      <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium text-foreground">Upload photo</span>
+                      <span className="text-xs text-muted-foreground">PNG, JPG up to 5MB</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        disabled={loading}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">First Name</label>
