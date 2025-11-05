@@ -8,6 +8,7 @@ import adminRoutes from "./routes/admin.js"
 import userRoutes from "./routes/users.js"
 import paymentRoutes from "./routes/payments.js"
 import messageRoutes from "./routes/messages.js"
+import uploadRoutes from "./routes/upload.js"
 import { authenticateToken } from "./middleware/auth.js"
 
 dotenv.config()
@@ -52,6 +53,8 @@ app.use(
 app.use(express.json())
 app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
+app.use("/uploads", express.static("uploads"))
+
 // Database Connection
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/odiya-store")
@@ -65,6 +68,7 @@ app.use("/api/admin", authenticateToken, adminRoutes)
 app.use("/api/users", authenticateToken, userRoutes)
 app.use("/api/payments", paymentRoutes)
 app.use("/api/messages", authenticateToken, messageRoutes)
+app.use("/api/upload", uploadRoutes)
 
 // Health Check
 app.get("/api/health", (req, res) => {

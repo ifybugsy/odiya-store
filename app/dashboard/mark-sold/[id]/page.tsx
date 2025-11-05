@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function MarkSoldPage() {
   const { user, token } = useAuth()
@@ -19,7 +19,7 @@ export default function MarkSoldPage() {
 
     const markAsSold = async () => {
       try {
-        const res = await fetch(`${API_URL}/items/${params.id}/mark-sold`, {
+        const res = await fetch(`${API_URL}/items/${params.id}/sold`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -28,11 +28,10 @@ export default function MarkSoldPage() {
         })
 
         if (!res.ok) {
-          // Only try to parse JSON if content-type indicates JSON
           const contentType = res.headers.get("content-type")
           if (contentType?.includes("application/json")) {
             const data = await res.json()
-            alert(data.error || "Failed to mark item as sold")
+            alert(data.error || `Failed to mark item as sold (${res.status})`)
           } else {
             alert(`Error: ${res.status} ${res.statusText}`)
           }
@@ -40,15 +39,15 @@ export default function MarkSoldPage() {
           const contentType = res.headers.get("content-type")
           if (contentType?.includes("application/json")) {
             const data = await res.json()
-            alert("Item marked as sold!")
+            alert("✓ Item marked as sold successfully!")
           } else {
-            alert("Item marked as sold!")
+            alert("✓ Item marked as sold successfully!")
           }
         }
 
         router.push("/dashboard")
       } catch (error) {
-        console.error("Error:", error)
+        console.error("[v0] Mark sold error:", error)
         alert("An error occurred while marking item as sold")
         router.push("/dashboard")
       }

@@ -106,19 +106,27 @@ export default function EditProfilePage() {
         const imageFormData = new FormData()
         imageFormData.append("file", imageFile)
 
-        const uploadRes = await fetch(`${API_URL}/upload`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: imageFormData,
-        })
+        try {
+          const uploadRes = await fetch(`${API_URL}/upload`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: imageFormData,
+          })
 
-        if (uploadRes.ok) {
+          if (!uploadRes.ok) {
+            const uploadError = await uploadRes.json().catch(() => ({ error: "Upload failed" }))
+            throw new Error(uploadError.error || `Upload failed with status ${uploadRes.status}`)
+          }
+
           const uploadData = await uploadRes.json()
+          if (!uploadData.url) {
+            throw new Error("No URL returned from upload service")
+          }
           profileImageUrl = uploadData.url
-        } else {
-          throw new Error("Failed to upload image")
+        } catch (uploadErr: any) {
+          throw new Error(`Failed to upload image: ${uploadErr.message}`)
         }
       }
 
@@ -145,7 +153,8 @@ export default function EditProfilePage() {
       setUser(data.user)
       router.push("/dashboard")
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message || "An unexpected error occurred")
+      console.error("[v0] Profile update error:", err)
     } finally {
       setLoading(false)
     }

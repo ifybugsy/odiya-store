@@ -48,14 +48,29 @@ export default function ItemPage() {
     setSubmitMessage("")
 
     try {
+      if (
+        !contactData.senderName.trim() ||
+        !contactData.senderPhone.trim() ||
+        !contactData.senderEmail.trim() ||
+        !contactData.message.trim()
+      ) {
+        setSubmitMessage("Please fill in all fields")
+        setSubmitting(false)
+        return
+      }
+
       const res = await fetch(`${API_URL}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           itemId: params.id,
           ...contactData,
         }),
       })
+
+      const data = await res.json()
 
       if (res.ok) {
         setSubmitMessage("✓ Message sent successfully!")
@@ -65,13 +80,12 @@ export default function ItemPage() {
           setSubmitMessage("")
         }, 1500)
       } else {
-        const error = await res.json()
-        setSubmitMessage("Failed to send message. Please try again.")
-        console.error("Send error:", error)
+        setSubmitMessage(data.error || "Failed to send message. Please try again.")
+        console.error("[v0] Send error:", data)
       }
     } catch (error) {
-      setSubmitMessage("Error sending message. Please try again.")
-      console.error("Failed to send message:", error)
+      setSubmitMessage("Error sending message. Please check your connection and try again.")
+      console.error("[v0] Failed to send message:", error)
     } finally {
       setSubmitting(false)
     }
