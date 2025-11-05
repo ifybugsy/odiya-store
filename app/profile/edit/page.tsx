@@ -107,6 +107,7 @@ export default function EditProfilePage() {
         imageFormData.append("file", imageFile)
 
         try {
+          console.log("[v0] Starting image upload...")
           const uploadRes = await fetch(`${API_URL}/upload`, {
             method: "POST",
             headers: {
@@ -115,17 +116,22 @@ export default function EditProfilePage() {
             body: imageFormData,
           })
 
+          console.log("[v0] Upload response status:", uploadRes.status)
+          const uploadData = await uploadRes.json()
+          console.log("[v0] Upload response:", uploadData)
+
           if (!uploadRes.ok) {
-            const uploadError = await uploadRes.json().catch(() => ({ error: "Upload failed" }))
+            const uploadError = uploadData
             throw new Error(uploadError.error || `Upload failed with status ${uploadRes.status}`)
           }
 
-          const uploadData = await uploadRes.json()
           if (!uploadData.url) {
             throw new Error("No URL returned from upload service")
           }
           profileImageUrl = uploadData.url
+          console.log("[v0] Image uploaded successfully:", profileImageUrl)
         } catch (uploadErr: any) {
+          console.error("[v0] Upload error details:", uploadErr)
           throw new Error(`Failed to upload image: ${uploadErr.message}`)
         }
       }

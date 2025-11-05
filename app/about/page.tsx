@@ -1,8 +1,26 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { Card } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 
 export default function AboutPage() {
+  const [loadingDispatch, setLoadingDispatch] = useState(true)
+  const [loadingVendors, setLoadingVendors] = useState(true)
+
+  useEffect(() => {
+    // Simulate loading delays for new sections
+    const dispatchTimer = setTimeout(() => setLoadingDispatch(false), 2000)
+    const vendorsTimer = setTimeout(() => setLoadingVendors(false), 2500)
+
+    return () => {
+      clearTimeout(dispatchTimer)
+      clearTimeout(vendorsTimer)
+    }
+  }, [])
+
   return (
     <>
       <Navbar />
@@ -48,6 +66,52 @@ export default function AboutPage() {
                 <li>✓ Direct communication happens between buyers and sellers</li>
                 <li>✓ Admins ensure quality and safety of the platform</li>
               </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-bold mb-4">Dispatch Riders</h2>
+              {loadingDispatch ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading dispatch rider services...</span>
+                </div>
+              ) : (
+                <div className="space-y-3 text-muted-foreground">
+                  <p>
+                    Odiya Store partners with reliable dispatch riders to ensure fast and secure delivery of items
+                    across Nigeria.
+                  </p>
+                  <ul className="space-y-2">
+                    <li>✓ Fast and trackable deliveries</li>
+                    <li>✓ Professional and verified riders</li>
+                    <li>✓ Real-time delivery updates</li>
+                    <li>✓ Secure payment integration</li>
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-bold mb-4">Marketplace Vendors</h2>
+              {loadingVendors ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading marketplace vendor information...</span>
+                </div>
+              ) : (
+                <div className="space-y-3 text-muted-foreground">
+                  <p>
+                    Our marketplace vendor program supports businesses and entrepreneurs who want to scale their
+                    operations on Odiya Store.
+                  </p>
+                  <ul className="space-y-2">
+                    <li>✓ Premium vendor accounts with enhanced visibility</li>
+                    <li>✓ Bulk listing capabilities and inventory management</li>
+                    <li>✓ Dedicated seller support and analytics</li>
+                    <li>✓ Featured storefront and promotional tools</li>
+                  </ul>
+                </div>
+              )}
             </section>
 
             <section>

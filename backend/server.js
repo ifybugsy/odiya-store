@@ -17,18 +17,16 @@ const app = express()
 
 const isDevelopment = process.env.NODE_ENV === "development" || process.env.DEVELOPMENT_MODE === "true"
 
-// Define allowed origins for CORS
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://odiya-store.vercel.app",
   process.env.FRONTEND_URL,
-].filter(Boolean) // Remove undefined values
+].filter(Boolean)
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, curl requests)
       if (!origin) return callback(null, true)
 
       if (isDevelopment) {
@@ -36,7 +34,6 @@ app.use(
         return callback(null, true)
       }
 
-      // Production CORS enforcement
       if (allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
@@ -47,7 +44,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
   }),
 )
 app.use(express.json())
@@ -55,7 +52,6 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }))
 
 app.use("/uploads", express.static("uploads"))
 
-// Database Connection
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/odiya-store")
   .then(() => console.log("MongoDB connected"))
@@ -67,15 +63,13 @@ app.use("/api/items", itemRoutes)
 app.use("/api/admin", authenticateToken, adminRoutes)
 app.use("/api/users", authenticateToken, userRoutes)
 app.use("/api/payments", paymentRoutes)
-app.use("/api/messages", authenticateToken, messageRoutes)
+app.use("/api/messages", messageRoutes)
 app.use("/api/upload", uploadRoutes)
 
-// Health Check
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", message: "Odiya Store API is running" })
 })
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack)
   res.status(err.status || 500).json({

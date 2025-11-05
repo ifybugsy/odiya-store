@@ -59,6 +59,12 @@ export default function ItemPage() {
         return
       }
 
+      console.log("[v0] Sending message to:", `${API_URL}/messages`)
+      console.log("[v0] Message payload:", {
+        itemId: params.id,
+        ...contactData,
+      })
+
       const res = await fetch(`${API_URL}/messages`, {
         method: "POST",
         headers: {
@@ -71,6 +77,8 @@ export default function ItemPage() {
       })
 
       const data = await res.json()
+      console.log("[v0] API Response status:", res.status)
+      console.log("[v0] API Response data:", data)
 
       if (res.ok) {
         setSubmitMessage("✓ Message sent successfully!")
