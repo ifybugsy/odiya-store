@@ -108,6 +108,13 @@ export default function EditProfilePage() {
 
         try {
           console.log("[v0] Starting image upload...")
+          console.log("[v0] Token available:", !!token)
+          console.log("[v0] File details:", {
+            name: imageFile.name,
+            size: imageFile.size,
+            type: imageFile.type,
+          })
+
           const uploadRes = await fetch(`${API_URL}/upload`, {
             method: "POST",
             headers: {
@@ -117,22 +124,50 @@ export default function EditProfilePage() {
           })
 
           console.log("[v0] Upload response status:", uploadRes.status)
-          const uploadData = await uploadRes.json()
-          console.log("[v0] Upload response:", uploadData)
+          console.log("[v0] Upload response headers:", {
+            contentType: uploadRes.headers.get("content-type"),
+            contentLength: uploadRes.headers.get("content-length"),
+          })
+
+          const contentType = uploadRes.headers.get("content-type")
+          let uploadData
+
+          if (contentType && contentType.includes("application/json")) {
+            uploadData = await uploadRes.json()
+          } else {
+            const responseText = await uploadRes.text()
+            console.error("[v0] Unexpected response format. First 500 chars:", responseText.substring(0, 500))
+
+            if (uploadRes.status === 401) {
+              throw new Error("Authentication failed. Please log in again.")
+            }
+            if (uploadRes.status === 403) {
+              throw new Error("You don't have permission to upload files.")
+            }
+            throw new Error(`Upload service returned ${uploadRes.status}: Invalid response format`)
+          }
+
+          console.log("[v0] Upload response data:", uploadData)
 
           if (!uploadRes.ok) {
-            const uploadError = uploadData
-            throw new Error(uploadError.error || `Upload failed with status ${uploadRes.status}`)
+            const errorMessage = uploadData.error || `Upload failed with status ${uploadRes.status}`
+            console.error("[v0] Upload failed:", errorMessage)
+            throw new Error(`Failed to upload image: ${errorMessage}`)
           }
 
           if (!uploadData.url) {
-            throw new Error("No URL returned from upload service")
+            console.error("[v0] No URL in response:", uploadData)
+            throw new Error("Upload service did not return a file URL")
           }
+
           profileImageUrl = uploadData.url
           console.log("[v0] Image uploaded successfully:", profileImageUrl)
         } catch (uploadErr: any) {
-          console.error("[v0] Upload error details:", uploadErr)
-          throw new Error(`Failed to upload image: ${uploadErr.message}`)
+          console.error("[v0] Upload error details:", {
+            message: uploadErr.message,
+            stack: uploadErr.stack,
+          })
+          throw uploadErr
         }
       }
 
@@ -159,7 +194,8 @@ export default function EditProfilePage() {
       setUser(data.user)
       router.push("/dashboard")
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred")
+      const errorMsg = err.message || "An unexpected error occurred"
+      setError(errorMsg)
       console.error("[v0] Profile update error:", err)
     } finally {
       setLoading(false)

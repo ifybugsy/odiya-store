@@ -76,8 +76,19 @@ export default function ItemPage() {
         }),
       })
 
-      const data = await res.json()
       console.log("[v0] API Response status:", res.status)
+      console.log("[v0] Response Content-Type:", res.headers.get("content-type"))
+
+      let data
+      const contentType = res.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json()
+      } else {
+        const text = await res.text()
+        console.error("[v0] Non-JSON response received:", text.substring(0, 200))
+        throw new Error(`Server returned ${res.status}: Invalid response format`)
+      }
+
       console.log("[v0] API Response data:", data)
 
       if (res.ok) {
@@ -91,8 +102,9 @@ export default function ItemPage() {
         setSubmitMessage(data.error || "Failed to send message. Please try again.")
         console.error("[v0] Send error:", data)
       }
-    } catch (error) {
-      setSubmitMessage("Error sending message. Please check your connection and try again.")
+    } catch (error: any) {
+      const errorMsg = error.message || "Error sending message. Please check your connection and try again."
+      setSubmitMessage(errorMsg)
       console.error("[v0] Failed to send message:", error)
     } finally {
       setSubmitting(false)
