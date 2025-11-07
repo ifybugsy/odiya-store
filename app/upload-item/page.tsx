@@ -36,11 +36,19 @@ const CATEGORIES = [
   "Health & Beauty",
 ]
 
+interface ImagePreview {
+  file: File
+  preview: string
+  size: string
+}
+
 export default function UploadItemPage() {
   const { user, token } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [imageFiles, setImageFiles] = useState<ImagePreview[]>([])
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -48,7 +56,6 @@ export default function UploadItemPage() {
     price: "",
     location: "",
     condition: "Good",
-    images: [] as string[],
   })
 
   const handleChange = (e: any) => {
@@ -59,17 +66,47 @@ export default function UploadItemPage() {
     const files = e.target.files
     if (!files) return
 
+    setError("")
+    const newPreviews: ImagePreview[] = []
+
     for (let i = 0; i < files.length; i++) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const result = event.target?.result as string
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, result],
-        }))
+      const file = files[i]
+
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+      if (!allowedTypes.includes(file.type)) {
+        setError(`${file.name}: Invalid file type`)
+        continue
       }
-      reader.readAsDataURL(files[i])
+
+      // Validate file size (max 100MB per file)
+      const maxSize = 100 * 1024 * 1024
+      if (file.size > maxSize) {
+        setError(`${file.name}: File too large (${(file.size / 1024 / 1024).toFixed(2)}MB > 100MB)`)
+        continue
+      }
+
+      // Create preview
+      const preview = URL.createObjectURL(file)
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2)
+
+      newPreviews.push({
+        file,
+        preview,
+        size: `${sizeMB}MB`,
+      })
     }
+
+    setImageFiles((prev) => [...prev, ...newPreviews])
+  }
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => {
+      const updated = [...prev]
+      URL.revokeObjectURL(updated[index].preview)
+      updated.splice(index, 1)
+      return updated
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +115,7 @@ export default function UploadItemPage() {
     setLoading(true)
 
     try {
-      if (!formData.images.length) {
+      if (!imageFiles.length) {
         setError("Please upload at least one image")
         setLoading(false)
         return
@@ -90,7 +127,8 @@ export default function UploadItemPage() {
         return
       }
 
-      const res = await fetch(`${API_URL}/items`, {
+      // First create the item
+      const createRes = await fetch(`${API_URL}/items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,31 +137,75 @@ export default function UploadItemPage() {
         body: JSON.stringify({
           ...formData,
           price: Number.parseFloat(formData.price),
+          images: [], // Images will be added separately
         }),
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || "Failed to upload item")
+      if (!createRes.ok) {
+        const data = await createRes.json()
+        setError(data.error || "Failed to create item")
+        setLoading(false)
+        return
+      }
+
+      const itemData = await createRes.json()
+      const itemId = itemData._id || itemData.id
+
+      // Upload images separately to avoid large payload
+      let uploadedCount = 0
+      for (let i = 0; i < imageFiles.length; i++) {
+        const { file } = imageFiles[i]
+        const uploadFormData = new FormData()
+        uploadFormData.append("file", file)
+
+        try {
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: uploadFormData,
+          })
+
+          if (!uploadRes.ok) {
+            const error = await uploadRes.json()
+            console.error("Image upload error:", error)
+            setError(`Failed to upload image ${i + 1}: ${error.error}`)
+            continue
+          }
+
+          uploadedCount++
+          setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100))
+        } catch (err: any) {
+          console.error(`Error uploading image ${i + 1}:`, err)
+        }
+      }
+
+      if (uploadedCount === 0) {
+        setError("Failed to upload any images")
         setLoading(false)
         return
       }
 
       alert(`Item uploaded successfully! 
-      
+
 Please pay the upload fee of ₦150 to confirm listing.
 
-Account Details: Ifybugsy Digital Technologies Limited
+Bank Account Details:
 Account Number: 1028301845
+Account Name: Ifybugsy Digital Technologies Ltd
+Bank Name: UBA
+
 Purpose: Odiya Store Upload Fee
 
-After payment, your item will be approved, and be listed cart.`)
+After payment, your item will be pending admin approval.`)
 
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message)
     } finally {
       setLoading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -200,7 +282,7 @@ After payment, your item will be approved, and be listed cart.`)
                     <option value="New">New</option>
                     <option value="Like New">Like New</option>
                     <option value="Good">Good</option>
-                    <option value="Fair">Fairly Used</option>
+                    <option value="Fair">Fair</option>
                   </select>
                 </div>
               </div>
@@ -250,38 +332,51 @@ After payment, your item will be approved, and be listed cart.`)
                 <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
-                  <p className="text-sm text-muted-foreground mt-2">Click to upload images</p>
+                  <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
                 </div>
 
-                {formData.images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-2">
-                    {formData.images.map((img, idx) => (
-                      <div key={idx} className="relative">
-                        <img
-                          src={img || "/placeholder.svg"}
-                          alt={`Preview ${idx}`}
-                          className="w-full h-20 object-cover rounded"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== idx),
-                            }))
-                          }
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                {uploadProgress > 0 && (
+                  <div className="mt-4">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Uploading images: {uploadProgress}%</p>
+                  </div>
+                )}
+
+                {imageFiles.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">Images ({imageFiles.length})</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {imageFiles.map((img, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={img.preview || "/placeholder.svg"}
+                            alt={`Preview ${idx}`}
+                            className="w-full h-20 object-cover rounded"
+                          />
+                          <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs rounded px-1">
+                            {img.size}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90 h-12 text-base" disabled={loading}>
-                {loading ? "Uploading..." : "Upload Item (₦500)"}
+                {loading ? "Uploading..." : "Upload Item (₦150)"}
               </Button>
             </form>
           </Card>

@@ -26,10 +26,14 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
 
         const data = await res.json()
 
-        const itemsList = Array.isArray(data.items) ? data.items : []
+        const itemsList = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
 
         // Filter out current item and sold items, then limit results
-        const filtered = itemsList.filter((item: any) => item._id !== currentItemId && !item.isSold).slice(0, limit)
+        const filtered = itemsList
+          .filter((item: any) => {
+            return item?._id !== currentItemId && !item?.isSold
+          })
+          .slice(0, limit)
 
         setItems(filtered)
         setError("")

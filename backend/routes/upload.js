@@ -24,7 +24,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB limit for large uploads
+    fieldSize: 500 * 1024 * 1024,
+  },
   fileFilter: (req, file, cb) => {
     const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     if (allowedMimes.includes(file.mimetype)) {
@@ -37,14 +40,14 @@ const upload = multer({
 
 const uploadErrorHandler = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    console.error("[v0] Multer error:", err)
+    console.error("[upload] Multer error:", err)
     if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({ error: "File is too large. Maximum size is 5MB." })
+      return res.status(413).json({ error: "File is too large. Maximum size is 500MB." })
     }
     return res.status(400).json({ error: err.message })
   }
   if (err) {
-    console.error("[v0] File upload error:", err)
+    console.error("[upload] File upload error:", err)
     return res.status(400).json({ error: err.message || "File upload failed" })
   }
   next()
@@ -66,17 +69,17 @@ router.post(
   (req, res) => {
     try {
       if (!req.file) {
-        console.error("[v0] No file uploaded")
+        console.error("[upload] No file uploaded")
         return res.status(400).json({ error: "No file uploaded" })
       }
 
       const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`
       const filePath = `${baseUrl}/uploads/${req.file.filename}`
 
-      console.log("[v0] File uploaded successfully:", {
+      console.log("[upload] File uploaded successfully:", {
         filename: req.file.filename,
         originalname: req.file.originalname,
-        size: req.file.size,
+        size: `${(req.file.size / 1024 / 1024).toFixed(2)}MB`,
         url: filePath,
       })
 
@@ -86,7 +89,7 @@ router.post(
         filename: req.file.filename,
       })
     } catch (error) {
-      console.error("[v0] Upload response error:", error)
+      console.error("[upload] Upload response error:", error)
       res.status(500).json({ error: error.message || "Failed to process upload response" })
     }
   },
