@@ -7,7 +7,7 @@ import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
 import { Search, Filter } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/$/, "")
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
 
