@@ -22,6 +22,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://odiya-store.vercel.app",
+  "https://odiya.store",
   process.env.FRONTEND_URL,
 ].filter(Boolean)
 
