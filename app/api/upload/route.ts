@@ -53,7 +53,12 @@ export async function POST(request: NextRequest) {
       try {
         errorData = JSON.parse(errorText)
       } catch {
-        errorData = { error: errorText || "Backend upload failed" }
+        console.error("[upload] Backend error response:", {
+          status: backendResponse.status,
+          statusText: backendResponse.statusText,
+          rawText: errorText,
+        })
+        errorData = { error: errorText || `Backend error: ${backendResponse.statusText}` }
       }
       return NextResponse.json(errorData, { status: backendResponse.status })
     }

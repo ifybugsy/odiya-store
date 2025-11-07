@@ -153,6 +153,8 @@ export default function UploadItemPage() {
 
       // Upload images separately to avoid large payload
       let uploadedCount = 0
+      let firstError = ""
+
       for (let i = 0; i < imageFiles.length; i++) {
         const { file } = imageFiles[i]
         const uploadFormData = new FormData()
@@ -169,20 +171,25 @@ export default function UploadItemPage() {
 
           if (!uploadRes.ok) {
             const error = await uploadRes.json()
-            console.error("Image upload error:", error)
-            setError(`Failed to upload image ${i + 1}: ${error.error}`)
+            console.error(`[upload] Image ${i + 1} failed:`, error)
+            if (!firstError) {
+              firstError = `Image ${i + 1}: ${error.error || "Upload failed"}`
+            }
             continue
           }
 
           uploadedCount++
           setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100))
         } catch (err: any) {
-          console.error(`Error uploading image ${i + 1}:`, err)
+          console.error(`[upload] Error uploading image ${i + 1}:`, err)
+          if (!firstError) {
+            firstError = `Image ${i + 1}: ${err.message}`
+          }
         }
       }
 
       if (uploadedCount === 0) {
-        setError("Failed to upload any images")
+        setError(firstError || "Failed to upload any images")
         setLoading(false)
         return
       }
