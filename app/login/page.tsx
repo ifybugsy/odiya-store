@@ -122,8 +122,8 @@ export default function LoginPage() {
       console.error("[v0] Authentication error:", err)
 
       if (err.name === "AbortError") {
-        setError("Request timed out. Backend may be slow. Please try again.")
-        setDebugInfo("Timeout after 15 seconds - check if backend is running")
+        setError("Request timed out. Network may be slow. Please try again.")
+        setDebugInfo("Timeout after 15 seconds - check if is running")
       } else {
         setError(err.message || "An error occurred")
         setDebugInfo(`Network error: ${err.message}`)

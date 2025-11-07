@@ -64,7 +64,7 @@ export default function AboutPage() {
                 <li>✓ Sellers can list items in various categories for ₦500 per item</li>
                 <li>✓ Buyers can discover products with infinite scroll browsing</li>
                 <li>✓ Direct communication happens between buyers and sellers</li>
-                <li>✓ Admins ensure quality and safety of the platform</li>
+                <li>✓ We ensure quality and safety of the platform</li>
               </ul>
             </section>
 

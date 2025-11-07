@@ -56,8 +56,8 @@ export default function ContactPage() {
                 <Phone className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-bold mb-1">Phone</h3>
-                  <p className="text-muted-foreground">+234 801 234 5678</p>
-                  <p className="text-muted-foreground">+234 902 345 6789</p>
+                  <p className="text-muted-foreground">+234 9160007661</p>
+                  <p className="text-muted-foreground">+234 9047994155</p>
                 </div>
               </Card>
 
@@ -65,7 +65,7 @@ export default function ContactPage() {
                 <MapPin className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-bold mb-1">Office</h3>
-                  <p className="text-muted-foreground">Lagos, Nigeria</p>
+                  <p className="text-muted-foreground">Port Harcourt, Nigeria</p>
                   <p className="text-muted-foreground">Nigeria's leading marketplace</p>
                 </div>
               </Card>

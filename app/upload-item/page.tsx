@@ -111,13 +111,13 @@ export default function UploadItemPage() {
 
       alert(`Item uploaded successfully! 
       
-Please pay the upload fee of ₦500 to confirm listing.
+Please pay the upload fee of ₦150 to confirm listing.
 
-Account Details:
-Account Number: 2252184000
+Account Details: Ifybugsy Digital Technologies Limited
+Account Number: 1028301845
 Purpose: Odiya Store Upload Fee
 
-After payment, your item will be pending admin approval.`)
+After payment, your item will be approved, and be listed cart.`)
 
       router.push("/dashboard")
     } catch (err: any) {
@@ -150,7 +150,7 @@ After payment, your item will be pending admin approval.`)
         <div className="max-w-3xl mx-auto px-4 py-8">
           <Card className="p-8">
             <h1 className="text-3xl font-bold mb-2">Upload Item</h1>
-            <p className="text-muted-foreground mb-8">Upload fee: ₦500 per item</p>
+            <p className="text-muted-foreground mb-8">Upload fee: ₦150 per item</p>
 
             {error && (
               <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-4 text-destructive">
@@ -200,7 +200,7 @@ After payment, your item will be pending admin approval.`)
                     <option value="New">New</option>
                     <option value="Like New">Like New</option>
                     <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
+                    <option value="Fair">Fairly Used</option>
                   </select>
                 </div>
               </div>
