@@ -2,16 +2,214 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import AdminSidebar from "@/components/admin/admin-sidebar"
-import DashboardHeader from "@/components/admin/dashboard-header"
-import StatsCard from "@/components/admin/stats-card"
-import PendingItemsSection from "@/components/admin/pending-items-section"
 import { useAuth } from "@/lib/auth-context"
-import { Ban, Users, Package, AlertCircle } from "lucide-react"
+import { Ban, Users, Package, AlertCircle, LayoutDashboard, Settings, LogOut, Bell, X, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
+// Inline AdminSidebar Component
+function AdminSidebar({ onLogout }: { onLogout: () => void }) {
+  const pathname = usePathname()
+
+  const menuItems = [
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/items", label: "Item Management", icon: Package },
+    { href: "/admin/users", label: "User Management", icon: Users },
+    { href: "/admin/reviews", label: "Reviews & Ratings", icon: Package },
+    { href: "/admin/activity", label: "Activity Tracking", icon: AlertCircle },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
+  ]
+
+  return (
+    <aside className="w-64 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 flex flex-col">
+      <div className="p-6 border-b border-sidebar-border">
+        <h2 className="text-lg font-bold text-sidebar-foreground">Admin Panel</h2>
+      </div>
+
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {menuItems.map((item) => {
+          const Icon = item.icon
+          const isActive = pathname === item.href
+
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className={`w-full justify-start gap-3 ${
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </Button>
+            </Link>
+          )
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-sidebar-border">
+        <Button
+          onClick={onLogout}
+          variant="outline"
+          className="w-full justify-start gap-2 text-sidebar-foreground bg-transparent"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </Button>
+      </div>
+    </aside>
+  )
+}
+
+function DashboardHeader({ user, title, description }: any) {
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [notificationCount, setNotificationCount] = useState(0)
+
+  useEffect(() => {
+    const mockNotifications = [
+      { id: 1, message: "New item pending approval", timestamp: new Date() },
+      { id: 2, message: "3 new user registrations", timestamp: new Date(Date.now() - 3600000) },
+      { id: 3, message: "System backup completed", timestamp: new Date(Date.now() - 7200000) },
+    ]
+    setNotifications(mockNotifications)
+    setNotificationCount(mockNotifications.length)
+  }, [])
+
+  return (
+    <div className="bg-background border-b border-border px-6 py-4 flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
+      </div>
+      <div className="flex items-center gap-2 relative">
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground relative"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="w-5 h-5" />
+            {notificationCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            )}
+          </Button>
+
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-border rounded-lg shadow-lg z-50">
+              <div className="p-4 border-b border-border flex justify-between items-center">
+                <h3 className="font-semibold">Notifications ({notificationCount})</h3>
+                <button onClick={() => setShowNotifications(false)} className="p-1 hover:bg-muted rounded">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    <p>No new notifications</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {notifications.map((notif) => (
+                      <div key={notif.id} className="p-3 hover:bg-muted/50 transition-colors">
+                        <p className="text-sm text-foreground">{notif.message}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{notif.timestamp.toLocaleTimeString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Link href="/admin/settings">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Settings className="w-5 h-5" />
+          </Button>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// Inline StatsCard Component
+function StatsCard({ label, value, icon, trend, className = "" }: any) {
+  return (
+    <Card className={`p-6 ${className}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-sm text-muted-foreground font-medium">{label}</p>
+          <p className="text-3xl font-bold text-foreground mt-2">{value}</p>
+          {trend && (
+            <p className={`text-xs font-medium mt-2 ${trend.isPositive ? "text-green-600" : "text-red-600"}`}>
+              {trend.isPositive ? "+" : ""}
+              {trend.value}% from last month
+            </p>
+          )}
+        </div>
+        <div className="text-muted-foreground/50">{icon}</div>
+      </div>
+    </Card>
+  )
+}
+
+// Inline PendingItemsSection Component
+function PendingItemsSection({ items, onApprove, onReject, onDelete, isLoading = false }: any) {
+  if (items.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <Package className="w-12 h-12 text-green-600 mx-auto mb-3 opacity-50" />
+        <p className="text-muted-foreground text-lg font-medium">No pending items</p>
+        <p className="text-sm text-muted-foreground mt-1">All items have been reviewed</p>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {items.map((item: any) => (
+        <Card key={item._id} className="p-6 hover:shadow-md transition-shadow">
+          <div className="flex gap-6 mb-4">
+            <div className="flex-1">
+              <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
+              <p className="text-muted-foreground text-sm mb-3">{item.description?.substring(0, 100)}...</p>
+              <div className="flex gap-4 text-sm flex-wrap">
+                <span className="font-semibold text-primary">₦{item.price?.toLocaleString()}</span>
+                <span className="text-muted-foreground">{item.category}</span>
+                <span className="text-muted-foreground">
+                  Seller: {item.sellerId?.firstName} {item.sellerId?.lastName}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={() => onApprove(item._id)}
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Approve
+            </Button>
+            <Button onClick={() => onReject(item._id)} disabled={isLoading} variant="outline">
+              Reject
+            </Button>
+            <Button onClick={() => onDelete(item._id)} disabled={isLoading} variant="destructive">
+              Delete
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
 export default function AdminPage() {
   const { user, token, isLoading } = useAuth()
@@ -28,30 +226,24 @@ export default function AdminPage() {
       return
     }
 
-    console.log("[v0] Auth state - user:", user, "token:", token, "isAdmin:", user?.isAdmin)
-
     if (!user) {
-      console.log("[v0] No user found, redirecting to login")
       setAuthError("Please log in to access admin dashboard")
       setTimeout(() => router.push("/admin-login"), 1000)
       return
     }
 
     if (!user.isAdmin) {
-      console.log("[v0] User is not admin, redirecting to home")
       setAuthError("You do not have admin privileges")
       setTimeout(() => router.push("/"), 1000)
       return
     }
 
     if (!token) {
-      console.log("[v0] No token found, redirecting to login")
       setAuthError("Authentication token missing")
       setTimeout(() => router.push("/admin-login"), 1000)
       return
     }
 
-    console.log("[v0] Admin authorization successful, loading data")
     loadData()
   }, [user, token, isLoading, router])
 
@@ -172,12 +364,10 @@ export default function AdminPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
       <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <DashboardHeader
           user={user}
           title="Dashboard"
@@ -197,7 +387,7 @@ export default function AdminPage() {
             <div className="p-6 space-y-8">
               {/* Stats Grid */}
               {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <StatsCard
                     label="Total Users"
                     value={stats.totalUsers}
@@ -209,6 +399,12 @@ export default function AdminPage() {
                     value={stats.totalSellers}
                     icon={<Users className="w-8 h-8" />}
                     trend={{ value: 8, isPositive: true }}
+                  />
+                  <StatsCard
+                    label="Total Riders"
+                    value={stats.totalRiders || 0}
+                    icon={<Truck className="w-8 h-8" />}
+                    trend={{ value: 15, isPositive: true }}
                   />
                   <StatsCard
                     label="Active Items"
@@ -283,7 +479,7 @@ export default function AdminPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {users.map((user) => (
+                            {users.map((user: any) => (
                               <tr key={user._id} className="border-b border-border hover:bg-muted/50 transition-colors">
                                 <td className="py-3 px-4 font-medium">
                                   {user.firstName} {user.lastName}

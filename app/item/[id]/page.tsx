@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "lucide-react"
+import { ShareButtons } from "@/components/share-buttons"
+import { SaveButton } from "@/components/save-button"
+import RelatedItems from "@/components/related-items"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -151,7 +154,7 @@ export default function ItemPage() {
   }).format(item.price)
 
   const hasMultipleImages = item.images && item.images.length > 1
-  const currentImage = item.images?.[currentImageIndex] || "/placeholder.svg"
+  const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
 
   return (
     <>
@@ -167,6 +170,9 @@ export default function ItemPage() {
                     src={currentImage || "/placeholder.svg"}
                     alt={item.title}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg"
+                    }}
                   />
                 </div>
 
@@ -203,7 +209,14 @@ export default function ItemPage() {
                         idx === currentImageIndex ? "border-primary" : "border-transparent"
                       }`}
                     >
-                      <img src={img || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={img?.trim() || "/placeholder.svg"}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg"
+                        }}
+                      />
                     </button>
                   ))}
                 </div>
@@ -219,6 +232,20 @@ export default function ItemPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4" />
                     {item.location}
+                  </div>
+                </div>
+
+                {/* Share & Save Buttons */}
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm font-semibold mb-3">Share & Save</p>
+                  <div className="space-y-2">
+                    <ShareButtons
+                      title={item.title}
+                      description={item.description}
+                      price={formattedPrice}
+                      itemId={item._id}
+                    />
+                    <SaveButton itemId={item._id} showLabel={true} variant="outline" />
                   </div>
                 </div>
 
@@ -240,6 +267,9 @@ export default function ItemPage() {
                         src={item.sellerId.profileImage || "/placeholder.svg"}
                         alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
                         className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg"
+                        }}
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
@@ -294,12 +324,14 @@ export default function ItemPage() {
                     <div className="flex gap-2">
                       <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-semibold text-amber-900 mb-1">Buyer Safety Tips</p>
+                        <p className="font-semibold text-amber-900 mb-1">Buyer Safety & Caution Notice</p>
                         <ul className="text-amber-800 space-y-1 text-xs">
                           <li>• Verify goods before making payment</li>
                           <li>• Meet in safe, public places</li>
                           <li>• Never share personal banking details</li>
-                          <li>• Use secure payment methods</li>
+                          <li>• Use secure payment methods only</li>
+                          <li>• Check item authenticity and quality</li>
+                          <li>• Keep communication records for safety</li>
                         </ul>
                       </div>
                     </div>
@@ -359,6 +391,10 @@ export default function ItemPage() {
           <div className="mt-8 bg-white rounded-lg p-6 border border-border">
             <h2 className="text-xl font-bold mb-4">Description</h2>
             <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+          </div>
+
+          <div className="mt-12">
+            <RelatedItems category={item.category} currentItemId={item._id} limit={6} />
           </div>
         </div>
       </main>

@@ -68,7 +68,10 @@
     "axios": "1.13.1",
     "multer": "2.0.2",
     "path": "0.12.7",
-    "fs": "0.0.1-security"
+    "fs": "0.0.1-security",
+    "socket.io-client": "4.8.1",
+    "ws": "8.18.3",
+    "http": "0.0.1-security"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",

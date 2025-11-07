@@ -9,6 +9,7 @@ import userRoutes from "./routes/users.js"
 import paymentRoutes from "./routes/payments.js"
 import messageRoutes from "./routes/messages.js"
 import uploadRoutes from "./routes/upload.js"
+import riderRoutes from "./routes/riders.js"
 import { authenticateToken } from "./middleware/auth.js"
 
 dotenv.config()
@@ -60,6 +61,7 @@ mongoose
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/items", itemRoutes)
+app.use("/api/rider", riderRoutes)
 app.use("/api/admin", authenticateToken, adminRoutes)
 app.use("/api/users", authenticateToken, userRoutes)
 app.use("/api/payments", paymentRoutes)

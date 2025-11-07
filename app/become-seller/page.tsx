@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function BecomeSellerPage() {
   const { user, token, setUser } = useAuth()
@@ -24,6 +24,42 @@ export default function BecomeSellerPage() {
     bankAccountName: "",
     bankName: "",
   })
+
+  useEffect(() => {
+    if (user && user.isSeller) {
+      console.log("[v0] User is already a seller, redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [user, router])
+
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="p-6 text-center max-w-md">
+            <p className="mb-4 text-foreground font-medium">Authentication Required</p>
+            <p className="text-sm text-muted-foreground mb-6">Please log in or register first to become a seller</p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/login?redirect=become-seller")}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                Login/Register
+              </Button>
+              <Button onClick={() => router.push("/")} variant="outline" className="flex-1 bg-transparent">
+                Go Back
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </>
+    )
+  }
+
+  if (user.isSeller) {
+    return null
+  }
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -54,9 +90,11 @@ export default function BecomeSellerPage() {
       const data = await res.json()
 
       setUser({
-        ...user!,
+        ...user,
         isSeller: true,
       })
+
+      console.log("[v0] User successfully became seller:", { userId: user.id, isSeller: true })
 
       router.push("/dashboard")
     } catch (err: any) {
@@ -64,22 +102,6 @@ export default function BecomeSellerPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!user) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
-          <p>Please login first</p>
-        </div>
-      </>
-    )
-  }
-
-  if (user.isSeller) {
-    router.push("/dashboard")
-    return null
   }
 
   return (

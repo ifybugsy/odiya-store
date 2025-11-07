@@ -1,12 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
+import { WishlistProvider } from "@/lib/wishlist-context"
+import { RiderAuthProvider } from "@/lib/rider-auth-context"
+import { BuyerAuthProvider } from "@/lib/buyer-auth-context"
 import "./globals.css"
-
-const _geistSans = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Odiya Store - Buy & Sell Online",
@@ -22,7 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <BuyerAuthProvider>
+            <RiderAuthProvider>
+              <WishlistProvider>{children}</WishlistProvider>
+            </RiderAuthProvider>
+          </BuyerAuthProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

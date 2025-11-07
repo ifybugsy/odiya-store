@@ -113,7 +113,11 @@ export default function LoginPage() {
       }
 
       const redirect = searchParams.get("redirect") || "dashboard"
-      router.push(`/${redirect}`)
+      const from = searchParams.get("from")
+      const redirectPath = `/${redirect}${from ? `?from=${from}` : ""}`
+
+      console.log("[v0] Redirecting to:", redirectPath)
+      router.push(redirectPath)
     } catch (err: any) {
       console.error("[v0] Authentication error:", err)
 

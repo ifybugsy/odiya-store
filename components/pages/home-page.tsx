@@ -7,7 +7,7 @@ import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
 import { Search, Filter } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
 
@@ -184,7 +184,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {items.map((item) => (
             <ItemCard key={item._id} item={item} />
           ))}

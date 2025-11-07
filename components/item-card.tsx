@@ -7,6 +7,8 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { SaveButton } from "@/components/save-button"
+import { getUserInitials } from "@/lib/user-utils"
 
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -29,17 +31,31 @@ export default function ItemCard({ item }: { item: any }) {
   }
 
   const hasMultipleImages = item.images && item.images.length > 1
-  const currentImage = item.images?.[currentImageIndex] || "/placeholder.svg"
+  const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
 
   return (
     <Link href={`/item/${item._id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-        <div className="relative w-full h-40 bg-muted group">
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
+        <div className="relative w-full h-40 bg-muted overflow-hidden">
           <img
             src={currentImage || "/placeholder.svg"}
             alt={`${item.title} - Image ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover transition-opacity duration-300"
+            className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg"
+            }}
           />
+
+          <div className="absolute top-2 left-2 z-10">
+            <div
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
+              <SaveButton itemId={item._id} size="sm" showLabel={false} variant="ghost" />
+            </div>
+          </div>
 
           {/* Image navigation buttons - only show if multiple images */}
           {hasMultipleImages && (
@@ -73,17 +89,29 @@ export default function ItemCard({ item }: { item: any }) {
           <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
           <p className="text-xs text-muted-foreground">{item.location}</p>
           <div className="flex items-center gap-2 mt-2">
-            {item.sellerId?.profileImage ? (
+            {item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? (
               <img
                 src={item.sellerId.profileImage || "/placeholder.svg"}
                 alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
                 className="w-6 h-6 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none"
+                  const parent = e.currentTarget.parentElement
+                  if (parent) {
+                    const fallback = parent.querySelector("[data-fallback]")
+                    if (fallback) fallback.style.display = "flex"
+                  }
+                }}
               />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
-                {item.sellerId?.firstName[0]}
-              </div>
-            )}
+            ) : null}
+            <div
+              data-fallback
+              className={`w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground ${
+                item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? "hidden" : ""
+              }`}
+            >
+              {getUserInitials(item.sellerId?.firstName, item.sellerId?.lastName)}
+            </div>
             <p className="text-xs truncate flex-1">
               {item.sellerId?.firstName} {item.sellerId?.lastName}
             </p>

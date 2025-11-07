@@ -1,92 +1,44 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { useAuth } from "@/lib/auth-context"
-import { MessageCircle, RefreshCw } from "lucide-react"
+import { Star, MapPin, MessageCircle, Phone, Mail } from "lucide-react"
+import Link from "next/link"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-export default function SellerPage() {
-  const { user, token } = useAuth()
-  const router = useRouter()
-  const [messages, setMessages] = useState([])
+export default function SellerProfilePage() {
+  const params = useParams()
+  const [seller, setSeller] = useState<any>(null)
+  const [sellerItems, setSellerItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedMessage, setSelectedMessage] = useState<any>(null)
-  const [response, setResponse] = useState("")
-  const [responding, setResponding] = useState(false)
-  const [responseMessage, setResponseMessage] = useState("")
-  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
-    if (!user?.isSeller || !token) {
-      router.push("/")
-      return
-    }
+    const loadSellerData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/users/${params.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSeller(data)
 
-    loadMessages()
-    const interval = setInterval(loadMessages, 5000)
-    return () => clearInterval(interval)
-  }, [user, token, router])
-
-  const loadMessages = async () => {
-    try {
-      const res = await fetch(`${API_URL}/messages/seller/${user?.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        const newMessages = await res.json()
-        setMessages(newMessages)
-        setRefreshing(false)
+          const itemsRes = await fetch(`${API_URL}/items?sellerId=${params.id}`)
+          if (itemsRes.ok) {
+            const itemsData = await itemsRes.json()
+            setSellerItems(itemsData.slice(0, 6))
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Failed to load seller data:", error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("[v0] Failed to load messages:", error)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  const handleRespond = async () => {
-    if (!response.trim() || !selectedMessage) return
-
-    setResponding(true)
-    setResponseMessage("")
-
-    try {
-      const res = await fetch(`${API_URL}/messages/${selectedMessage._id}/respond`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ response }),
-      })
-
-      if (res.ok) {
-        setResponseMessage("✓ Response sent successfully!")
-        setTimeout(() => {
-          setResponse("")
-          setResponseMessage("")
-          loadMessages()
-        }, 1500)
-      } else {
-        setResponseMessage("Failed to send response. Please try again.")
-      }
-    } catch (error) {
-      console.error("[v0] Failed to send response:", error)
-      setResponseMessage("Error sending response. Please try again.")
-    } finally {
-      setResponding(false)
-    }
-  }
-
-  const handleManualRefresh = async () => {
-    setRefreshing(true)
-    await loadMessages()
-  }
+    loadSellerData()
+  }, [params.id])
 
   if (loading) {
     return (
@@ -99,125 +51,162 @@ export default function SellerPage() {
     )
   }
 
+  if (!seller) {
+    return (
+      <>
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+          <p className="text-lg text-muted-foreground">Seller not found</p>
+        </div>
+      </>
+    )
+  }
+
+  const averageRating = Math.round(seller.rating || 0)
+  const totalReviews = seller.totalReviews || 0
+
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <MessageCircle className="w-8 h-8" />
-              Messages from Buyers
-            </h1>
-            <Button onClick={handleManualRefresh} variant="outline" size="sm" disabled={refreshing}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Messages List */}
-            <div className="lg:col-span-1">
-              {messages.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">No messages yet</p>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {messages.map((msg) => (
-                    <Card
-                      key={msg._id}
-                      onClick={() => {
-                        setSelectedMessage(msg)
-                        setResponse("")
-                        setResponseMessage("")
-                      }}
-                      className={`p-4 cursor-pointer transition ${
-                        selectedMessage?._id === msg._id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-                      }`}
-                    >
-                      <p className="font-semibold text-sm">{msg.senderName}</p>
-                      <p className="text-xs text-muted-foreground">{msg.itemId?.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{msg.message}</p>
-                      {msg.sellerResponse && <div className="text-xs text-green-600 mt-1 font-medium">✓ Responded</div>}
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Message Details */}
-            <div className="lg:col-span-2">
-              {selectedMessage ? (
-                <Card className="p-6">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold mb-2">{selectedMessage.senderName}</h3>
-                    <div className="space-y-2 text-sm">
-                      <p>
-                        <span className="font-medium">Item:</span> {selectedMessage.itemId?.title}
-                      </p>
-                      <p>
-                        <span className="font-medium">Phone:</span>{" "}
-                        <a href={`tel:${selectedMessage.senderPhone}`} className="text-primary hover:underline">
-                          {selectedMessage.senderPhone}
-                        </a>
-                      </p>
-                      <p>
-                        <span className="font-medium">Email:</span>{" "}
-                        <a href={`mailto:${selectedMessage.senderEmail}`} className="text-primary hover:underline">
-                          {selectedMessage.senderEmail}
-                        </a>
-                      </p>
-                    </div>
+          {/* Seller Profile Header */}
+          <Card className="p-8 mb-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+              {/* Profile Image */}
+              <div className="flex-shrink-0">
+                {seller.profileImage ? (
+                  <img
+                    src={seller.profileImage || "/placeholder.svg"}
+                    alt={`${seller.firstName} ${seller.lastName}`}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-primary"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-white text-4xl font-bold">
+                    {seller.firstName?.[0]}
+                    {seller.lastName?.[0]}
                   </div>
+                )}
+              </div>
 
-                  <div className="border-t border-border pt-4 mb-6">
-                    <p className="font-medium text-sm mb-2">Message:</p>
-                    <p className="text-muted-foreground whitespace-pre-wrap">{selectedMessage.message}</p>
-                  </div>
+              {/* Profile Info */}
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold mb-2">
+                  {seller.firstName} {seller.lastName}
+                </h1>
 
-                  {selectedMessage.sellerResponse && (
-                    <div className="bg-green-50 border border-green-200 rounded p-4 mb-6">
-                      <p className="font-medium text-sm text-green-900 mb-2">Your Response:</p>
-                      <p className="text-green-800 text-sm">{selectedMessage.sellerResponse}</p>
-                    </div>
-                  )}
-
-                  {!selectedMessage.sellerResponse && (
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Send Response</label>
-                      <textarea
-                        value={response}
-                        onChange={(e) => setResponse(e.target.value)}
-                        placeholder="Type your response..."
-                        className="w-full border border-border rounded-md p-2 mb-3 disabled:opacity-50"
-                        rows={4}
-                        disabled={responding}
+                {/* Rating */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${i < averageRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                       />
-                      {responseMessage && (
-                        <div
-                          className={`text-sm p-2 rounded mb-3 ${responseMessage.includes("✓") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
-                        >
-                          {responseMessage}
-                        </div>
-                      )}
-                      <Button
-                        onClick={handleRespond}
-                        className="bg-primary hover:bg-primary/90"
-                        disabled={responding || !response.trim()}
-                      >
-                        {responding ? "Sending..." : "Send Response"}
-                      </Button>
+                    ))}
+                  </div>
+                  <span className="text-lg font-semibold">{averageRating}.0</span>
+                  <span className="text-muted-foreground">({totalReviews} reviews)</span>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                  <MapPin className="w-5 h-5" />
+                  <span>{seller.city || seller.location || "Location not specified"}</span>
+                </div>
+
+                {/* Bio */}
+                {seller.bio && <p className="text-foreground mb-6 max-w-2xl">{seller.bio}</p>}
+
+                {/* Contact Info */}
+                <div className="space-y-3 mb-6">
+                  {seller.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-primary" />
+                      <a href={`tel:${seller.phone}`} className="font-semibold hover:underline">
+                        {seller.phone}
+                      </a>
                     </div>
                   )}
-                </Card>
-              ) : (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">Select a message to view details</p>
-                </Card>
-              )}
+                  {seller.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-primary" />
+                      <a href={`mailto:${seller.email}`} className="font-semibold hover:underline">
+                        {seller.email}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button className="bg-primary hover:bg-primary/90 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Contact Seller
+                  </Button>
+                  {sellerItems.length > 0 && (
+                    <Button variant="outline" className="bg-transparent">
+                      View All Items ({sellerItems.length}+)
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
+          </Card>
+
+          {/* Seller Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Total Items Listed</p>
+              <p className="text-3xl font-bold text-primary">{seller.totalItems || 0}</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Items Sold</p>
+              <p className="text-3xl font-bold text-green-600">{seller.itemsSold || 0}</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Member Since</p>
+              <p className="text-lg font-bold text-primary">
+                {new Date(seller.createdAt).toLocaleDateString("en-NG", {
+                  year: "numeric",
+                  month: "short",
+                })}
+              </p>
+            </Card>
           </div>
+
+          {/* Seller's Items */}
+          {sellerItems.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Featured Items</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sellerItems.map((item: any) => (
+                  <Link key={item._id} href={`/item/${item._id}`}>
+                    <Card className="overflow-hidden hover:shadow-lg transition cursor-pointer h-full">
+                      <div className="h-40 bg-muted relative">
+                        {item.images?.[0] && (
+                          <img
+                            src={item.images[0] || "/placeholder.svg"}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        {item.isSold && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">Sold</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold line-clamp-2 mb-2">{item.title}</h3>
+                        <p className="text-primary font-bold text-lg">₦{item.price.toLocaleString()}</p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </>

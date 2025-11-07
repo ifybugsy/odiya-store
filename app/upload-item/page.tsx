@@ -12,17 +12,28 @@ import { useAuth } from "@/lib/auth-context"
 import { Upload } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
 const CATEGORIES = [
-  "Cars",
-  "Phones",
   "Electronics",
+  "Phones",
+  "Laptops",
+  "Computers",
+  "Cars",
+  "Car Parts",
+  "Motorcycles",
   "Furniture",
   "Clothing",
+  "Hair Accessories",
+  "Fashion Accessories",
   "Books",
   "Sports",
+  "Sports Equipment",
   "Real Estate",
-  "Jobs",
   "Services",
+  "Food & Beverages",
+  "Home & Garden",
+  "Toys & Games",
+  "Health & Beauty",
 ]
 
 export default function UploadItemPage() {
@@ -98,7 +109,6 @@ export default function UploadItemPage() {
         return
       }
 
-      // Show payment details
       alert(`Item uploaded successfully! 
       
 Please pay the upload fee of ₦500 to confirm listing.

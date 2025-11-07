@@ -11,6 +11,7 @@ interface User {
   email: string
   isSeller: boolean
   isAdmin: boolean
+  isRider?: boolean
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   login: (token: string, user: User) => void
   logout: () => void
   setUser: (user: User) => void
+  refreshAuth: (user: User) => void
   isLoading: boolean
 }
 
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserState(user)
         setToken(token)
       } catch (e) {
-        console.error("Failed to load auth:", e)
+        console.error("[v0] Failed to load auth:", e)
       }
     }
     setIsLoading(false)
@@ -63,8 +65,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshAuth = (newUser: User) => {
+    console.log("[v0] Refreshing auth context:", {
+      oldRoles: { isSeller: user?.isSeller, isRider: user?.isRider },
+      newRoles: { isSeller: newUser.isSeller, isRider: newUser.isRider },
+    })
+    setUserState(newUser)
+    if (token) {
+      localStorage.setItem("auth", JSON.stringify({ token, user: newUser }))
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setUser, isLoading }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, token, login, logout, setUser, refreshAuth, isLoading }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 

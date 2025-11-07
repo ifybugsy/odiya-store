@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/auth-context"
 
 const slides = [
   {
@@ -27,6 +29,17 @@ const slides = [
   },
   {
     id: 3,
+    title: "Pick a Ride",
+    subtitle: "Fast & Reliable Delivery",
+    description: "Get your items delivered quickly. Join our rider network and earn extra income.",
+    bgColor: "from-amber-600 to-amber-400",
+    cta: "Pick a Ride",
+    icon: "🚗",
+    href: null,
+    action: "pickARide",
+  },
+  {
+    id: 4,
     title: "Safe & Secure",
     subtitle: "Protected Transactions",
     description: "Your data is secure. Trade with confidence on Nigeria's trusted marketplace.",
@@ -36,7 +49,7 @@ const slides = [
     href: "/",
   },
   {
-    id: 4,
+    id: 5,
     title: "Wide Selection",
     subtitle: "Everything You Need",
     description: "Cars, Electronics, Furniture, Clothing and more. Find anything on Odiya Store.",
@@ -50,6 +63,8 @@ const slides = [
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
+  const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     if (!autoPlay) return
@@ -76,6 +91,21 @@ export default function HeroSlider() {
     setAutoPlay(false)
   }
 
+  const handlePickARide = () => {
+    if (user) {
+      // If user is logged in and already a rider, go to rider dashboard
+      if (user.isRider) {
+        router.push("/rider/dashboard")
+      } else {
+        // Otherwise send to rider registration
+        router.push("/rider/register")
+      }
+    } else {
+      // Unauthenticated users go to role selection with rider context
+      router.push("/role-selection?from=pick-a-ride")
+    }
+  }
+
   const slide = slides[currentSlide]
 
   return (
@@ -99,11 +129,21 @@ export default function HeroSlider() {
               <h1 className="text-4xl md:text-5xl font-bold mb-3 text-balance">{s.title}</h1>
               <p className="text-xl md:text-2xl font-semibold mb-4 opacity-90">{s.subtitle}</p>
               <p className="text-base md:text-lg mb-8 opacity-85 max-w-lg">{s.description}</p>
-              <Link href={s.href}>
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
+              {s.action === "pickARide" ? (
+                <Button
+                  onClick={handlePickARide}
+                  size="lg"
+                  className="bg-white text-amber-600 hover:bg-gray-100 font-semibold"
+                >
                   {s.cta}
                 </Button>
-              </Link>
+              ) : (
+                <Link href={s.href || "/"}>
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
+                    {s.cta}
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Visual Decoration */}

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Package, Users, Star, TrendingUp, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Package, Users, Star, TrendingUp, Settings, LogOut, Truck } from "lucide-react"
 
 interface AdminSidebarProps {
   onLogout: () => void
@@ -17,6 +17,7 @@ export default function AdminSidebar({ onLogout }: AdminSidebarProps) {
     { href: "/admin/items", label: "Item Management", icon: Package },
     { href: "/admin/users", label: "User Management", icon: Users },
     { href: "/admin/reviews", label: "Reviews & Ratings", icon: Star },
+    { href: "/admin/riders", label: "Rider Management", icon: Truck },
     { href: "/admin/activity", label: "Activity Tracking", icon: TrendingUp },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ]
