@@ -16,15 +16,20 @@ dotenv.config()
 
 const app = express()
 
-const isDevelopment = process.env.NODE_ENV === "development" || process.env.DEVELOPMENT_MODE === "true"
+const isDevelopment = process.env.NODE_ENV === "development" && process.env.DEVELOPMENT_MODE !== "false"
 
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://odiya-store.vercel.app",
   "https://odiya.store",
+  "https://www.odiya.store",
   process.env.FRONTEND_URL,
 ].filter(Boolean)
+
+console.log("[STARTUP] Environment:", process.env.NODE_ENV)
+console.log("[STARTUP] Allowed CORS origins:", allowedOrigins)
+console.log("[STARTUP] Development mode:", isDevelopment)
 
 app.use(
   cors({
@@ -37,9 +42,11 @@ app.use(
       }
 
       if (allowedOrigins.includes(origin)) {
+        console.log("[CORS] ✓ Allowed origin:", origin)
         callback(null, true)
       } else {
-        console.warn(`CORS blocked request from origin: ${origin}`)
+        console.warn(`[CORS] ✗ Blocked request from origin: ${origin}`)
+        console.warn(`[CORS] Allowed origins are: ${allowedOrigins.join(", ")}`)
         callback(new Error("Not allowed by CORS"))
       }
     },
