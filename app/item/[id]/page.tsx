@@ -126,6 +126,17 @@ export default function ItemPage() {
     }
   }
 
+  const sanitizeImageUrl = (url: string): string => {
+    if (!url) return "/placeholder.svg"
+    const trimmed = url.trim()
+    if (!trimmed) return "/placeholder.svg"
+    // Ensure HTTPS for secure content delivery
+    if (trimmed.startsWith("http://")) {
+      return trimmed.replace("http://", "https://")
+    }
+    return trimmed
+  }
+
   if (loading) {
     return (
       <>
@@ -154,7 +165,8 @@ export default function ItemPage() {
   }).format(item.price)
 
   const hasMultipleImages = item.images && item.images.length > 1
-  const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
+  const sanitizedImages = item.images?.filter((img: string) => img?.trim()).map(sanitizeImageUrl) || []
+  const currentImage = sanitizedImages[currentImageIndex] || "/placeholder.svg"
 
   return (
     <>
@@ -193,15 +205,15 @@ export default function ItemPage() {
                       <ChevronRight className="w-5 h-5" />
                     </button>
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded text-sm">
-                      {currentImageIndex + 1} / {item.images.length}
+                      {currentImageIndex + 1} / {sanitizedImages.length}
                     </div>
                   </>
                 )}
               </div>
 
-              {item.images && item.images.length > 1 && (
+              {hasMultipleImages && (
                 <div className="grid grid-cols-4 gap-2">
-                  {item.images.map((img: string, idx: number) => (
+                  {sanitizedImages.map((img: string, idx: number) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
@@ -210,7 +222,7 @@ export default function ItemPage() {
                       }`}
                     >
                       <img
-                        src={img?.trim() || "/placeholder.svg"}
+                        src={img || "/placeholder.svg"}
                         alt=""
                         className="w-full h-full object-cover"
                         onError={(e) => {
