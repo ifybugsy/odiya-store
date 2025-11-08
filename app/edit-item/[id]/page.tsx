@@ -10,20 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import { Upload } from "lucide-react"
+import { CATEGORIES } from "@/lib/categories"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
-const CATEGORIES = [
-  "Cars",
-  "Phones",
-  "Electronics",
-  "Furniture",
-  "Clothing",
-  "Books",
-  "Sports",
-  "Real Estate",
-  "Jobs",
-  "Services",
-]
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function EditItemPage() {
   const { user, token } = useAuth()
@@ -143,10 +132,20 @@ export default function EditItemPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || "Failed to update item")
+        const contentType = res.headers.get("content-type")
+        if (contentType?.includes("application/json")) {
+          const data = await res.json()
+          setError(data.error || "Failed to update item")
+        } else {
+          setError(`Error: ${res.status} ${res.statusText}`)
+        }
         setSubmitting(false)
         return
+      }
+
+      const contentType = res.headers.get("content-type")
+      if (contentType?.includes("application/json")) {
+        await res.json()
       }
 
       alert("Item updated successfully!")

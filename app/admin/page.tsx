@@ -418,6 +418,13 @@ export default function AdminPage() {
                     icon={<AlertCircle className="w-8 h-8" />}
                     className="border-orange-200 bg-orange-50/50"
                   />
+                  {/* Revenue Calculation Card */}
+                  <StatsCard
+                    label="Total Revenue"
+                    value={`₦${((stats.totalItems || 0) * 150).toLocaleString()}`}
+                    icon={<AlertCircle className="w-8 h-8" />}
+                    className="border-green-200 bg-green-50/50"
+                  />
                 </div>
               )}
 

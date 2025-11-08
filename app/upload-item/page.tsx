@@ -10,31 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import { Upload } from "lucide-react"
+import { CATEGORIES } from "@/lib/categories"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-
-const CATEGORIES = [
-  "Electronics",
-  "Phones",
-  "Laptops",
-  "Computers",
-  "Cars",
-  "Car Parts",
-  "Motorcycles",
-  "Furniture",
-  "Clothing",
-  "Hair Accessories",
-  "Fashion Accessories",
-  "Books",
-  "Sports",
-  "Sports Equipment",
-  "Real Estate",
-  "Services",
-  "Food & Beverages",
-  "Home & Garden",
-  "Toys & Games",
-  "Health & Beauty",
-]
 
 interface ImagePreview {
   file: File

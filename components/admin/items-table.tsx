@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { CheckCircle, XCircle, Trash2, Eye } from "lucide-react"
+import { CheckCircle, XCircle, Trash2, Eye, X } from "lucide-react"
 
 interface Item {
   _id: string
@@ -32,6 +32,8 @@ interface ItemsTableProps {
 
 export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoading = false }: ItemsTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const [previewItem, setPreviewItem] = useState<Item | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const handleSelectAll = () => {
     if (selectedItems.length === items.length) {
@@ -43,6 +45,11 @@ export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoa
 
   const handleSelectItem = (itemId: string) => {
     setSelectedItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]))
+  }
+
+  const handleConfirmDelete = (itemId: string) => {
+    onDelete(itemId)
+    setDeleteConfirm(null)
   }
 
   const getStatusBadge = (status: string) => {
@@ -109,7 +116,10 @@ export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoa
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       {item.images?.[0] && (
-                        <div className="relative w-10 h-10 rounded bg-muted flex-shrink-0">
+                        <div
+                          className="relative w-10 h-10 rounded bg-muted flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setPreviewItem(item)}
+                        >
                           <Image
                             src={item.images[0] || "/placeholder.svg"}
                             alt={item.title}
@@ -139,7 +149,12 @@ export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoa
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="text-xs w-8 h-8 p-0">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs w-8 h-8 p-0"
+                        onClick={() => setPreviewItem(item)}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
                       {item.status === "pending" && (
@@ -165,8 +180,8 @@ export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoa
                       )}
                       <Button
                         size="sm"
-                        onClick={() => onDelete(item._id)}
-                        disabled={isLoading}
+                        onClick={() => setDeleteConfirm(item._id)}
+                        disabled={isLoading || deleteConfirm !== null}
                         variant="destructive"
                         className="text-xs w-8 h-8 p-0"
                       >
@@ -180,6 +195,94 @@ export default function ItemsTable({ items, onApprove, onReject, onDelete, isLoa
           </table>
         </div>
       </Card>
+
+      {previewItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-bold">{previewItem.title}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{previewItem.category}</p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setPreviewItem(null)} className="h-8 w-8 p-0">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {previewItem.images && previewItem.images.length > 0 && (
+                <div className="space-y-2">
+                  <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
+                    <Image
+                      src={previewItem.images[0] || "/placeholder.svg"}
+                      alt={previewItem.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  {previewItem.images.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {previewItem.images.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square bg-muted rounded overflow-hidden">
+                          <Image
+                            src={img || "/placeholder.svg"}
+                            alt={`${previewItem.title} ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div>
+                  <p className="text-sm text-muted-foreground">Price</p>
+                  <p className="text-lg font-bold text-primary">₦{previewItem.price.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-lg font-bold">{getStatusBadge(previewItem.status)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Seller</p>
+                  <p className="text-sm font-medium">
+                    {previewItem.sellerId?.firstName} {previewItem.sellerId?.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{previewItem.sellerId?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Posted</p>
+                  <p className="text-sm font-medium">{new Date(previewItem.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-sm w-full">
+            <div className="p-6 space-y-4">
+              <h2 className="text-lg font-bold text-red-600">Delete Item Permanently?</h2>
+              <p className="text-sm text-muted-foreground">
+                This action cannot be undone. The item and all its data will be permanently removed from the platform.
+              </p>
+              <div className="flex gap-3 justify-end pt-4">
+                <Button variant="outline" onClick={() => setDeleteConfirm(null)} disabled={isLoading}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={() => handleConfirmDelete(deleteConfirm)} disabled={isLoading}>
+                  Delete Permanently
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
