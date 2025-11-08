@@ -73,7 +73,7 @@ router.post(
         return res.status(400).json({ error: "No file uploaded" })
       }
 
-      const baseUrl = process.env.API_BASE_URL || `https://api.odiya.store`
+      const baseUrl = process.env.API_BASE_URL || `https://odiya.store`
       const filePath = `${baseUrl}/uploads/${req.file.filename}`
 
       console.log("[upload] File uploaded successfully:", {
