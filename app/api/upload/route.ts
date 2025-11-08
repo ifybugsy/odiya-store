@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization")
     const token = authHeader?.replace("Bearer ", "") || ""
 
-    const backendUrl = process.env.BACKEND_API_URL || "https://odiya.store/api"
+    const backendUrl = process.env.BACKEND_API_URL || "https://odiya.store"
     const uploadUrl = `${backendUrl}/upload`
 
     console.log("[upload] Forwarding to backend:", { uploadUrl, fileName: file.name })
