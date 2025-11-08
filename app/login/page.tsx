@@ -9,8 +9,8 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { useAuth } from "@/lib/auth-context"
 import { AlertCircle, Loader2 } from "lucide-react"
+import API_URL from "@/lib/api-config"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 const API_TIMEOUT = 15000 // 15 seconds timeout
 
 export default function LoginPage() {
@@ -47,9 +47,11 @@ export default function LoginPage() {
 
       console.log("[v0] Login attempt:", { endpoint, email: normalizedEmail, apiUrl: API_URL })
 
-      // Create abort controller for timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
+      const timeoutId = setTimeout(() => {
+        console.log("[v0] Login request timeout - aborting")
+        controller.abort()
+      }, API_TIMEOUT)
 
       if (isSignUp) {
         if (formData.password !== formData.confirmPassword) {
@@ -69,6 +71,7 @@ export default function LoginPage() {
             password: formData.password,
           }),
           signal: controller.signal,
+          credentials: "include",
         })
 
         clearTimeout(timeoutId)
@@ -94,6 +97,7 @@ export default function LoginPage() {
             password: formData.password,
           }),
           signal: controller.signal,
+          credentials: "include",
         })
 
         clearTimeout(timeoutId)
@@ -122,11 +126,14 @@ export default function LoginPage() {
       console.error("[v0] Authentication error:", err)
 
       if (err.name === "AbortError") {
-        setError("Request timed out. Network may be slow. Please try again.")
-        setDebugInfo("Timeout after 15 seconds - check if is running")
+        setError("Request timed out. Backend may be slow or unreachable. Please try again.")
+        setDebugInfo("Timeout after 15 seconds - verify backend is deployed and accessible")
+      } else if (err.message?.includes("Failed to fetch")) {
+        setError("Network error - unable to connect to backend")
+        setDebugInfo("Check if backend URL is correct and CORS is properly configured")
       } else {
         setError(err.message || "An error occurred")
-        setDebugInfo(`Network error: ${err.message}`)
+        setDebugInfo(`Error: ${err.message}`)
       }
     } finally {
       setLoading(false)

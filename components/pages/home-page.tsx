@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
+import NewsTicker from "@/components/news-ticker"
 import { Search, Filter } from "lucide-react"
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/$/, "")
+import API_URL from "@/lib/api-config"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
 
@@ -27,10 +27,14 @@ export default function HomePage() {
         console.log("[v0] Loading categories from:", `${API_URL}/items/categories`)
 
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const timeoutId = setTimeout(() => {
+          console.log("[v0] Aborting request - timeout after 10 seconds")
+          controller.abort()
+        }, 10000)
 
         const res = await fetch(`${API_URL}/items/categories`, {
           signal: controller.signal,
+          credentials: "include",
         })
 
         clearTimeout(timeoutId)
@@ -42,8 +46,12 @@ export default function HomePage() {
         const data = await res.json()
         console.log("[v0] Categories loaded:", data.categories)
         setCategories(data.categories || FALLBACK_CATEGORIES)
-      } catch (error) {
-        console.error("[v0] Failed to load categories:", error)
+      } catch (error: any) {
+        if (error.name === "AbortError") {
+          console.error("[v0] Category request aborted/timed out:", error.message)
+        } else {
+          console.error("[v0] Failed to load categories:", error)
+        }
         console.log("[v0] Using fallback categories")
         setCategories(FALLBACK_CATEGORIES)
       }
@@ -127,6 +135,9 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <HeroSlider />
       </section>
+
+      {/* Scrolling News Ticker */}
+      <NewsTicker />
 
       {/* Search Section */}
       <section className="bg-white border-b border-border sticky top-16 z-40">
