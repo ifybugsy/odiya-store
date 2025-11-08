@@ -127,32 +127,7 @@ export default function UploadItemPage() {
         return
       }
 
-      // First create the item
-      const createRes = await fetch(`${API_URL}/items`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: Number.parseFloat(formData.price),
-          images: [], // Images will be added separately
-        }),
-      })
-
-      if (!createRes.ok) {
-        const data = await createRes.json()
-        setError(data.error || "Failed to create item")
-        setLoading(false)
-        return
-      }
-
-      const itemData = await createRes.json()
-      const itemId = itemData._id || itemData.id
-
-      // Upload images separately to avoid large payload
-      let uploadedCount = 0
+      const uploadedImageUrls: string[] = []
       let firstError = ""
 
       for (let i = 0; i < imageFiles.length; i++) {
@@ -178,7 +153,8 @@ export default function UploadItemPage() {
             continue
           }
 
-          uploadedCount++
+          const uploadData = await uploadRes.json()
+          uploadedImageUrls.push(uploadData.url)
           setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100))
         } catch (err: any) {
           console.error(`[upload] Error uploading image ${i + 1}:`, err)
@@ -188,8 +164,29 @@ export default function UploadItemPage() {
         }
       }
 
-      if (uploadedCount === 0) {
+      if (uploadedImageUrls.length === 0) {
         setError(firstError || "Failed to upload any images")
+        setLoading(false)
+        return
+      }
+
+      // Now create the item WITH the uploaded image URLs
+      const createRes = await fetch(`${API_URL}/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          price: Number.parseFloat(formData.price),
+          images: uploadedImageUrls, // Include uploaded image URLs
+        }),
+      })
+
+      if (!createRes.ok) {
+        const data = await createRes.json()
+        setError(data.error || "Failed to create item")
         setLoading(false)
         return
       }

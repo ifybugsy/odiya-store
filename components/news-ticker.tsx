@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Play, Pause } from "lucide-react"
 
 export interface NewsItem {
   id: string
@@ -50,13 +49,11 @@ const DEFAULT_NEWS: NewsItem[] = [
   },
 ]
 
-export default function NewsTicker({ items = DEFAULT_NEWS, speed = 30, onItemClick }: NewsTickerProps) {
+export default function NewsTicker({ items = DEFAULT_NEWS, speed = 15, onItemClick }: NewsTickerProps) {
   const [displayItems, setDisplayItems] = useState<NewsItem[]>(items)
-  const [isPlaying, setIsPlaying] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  // Duplicate items for seamless loop
   useEffect(() => {
     setDisplayItems([...items, ...items])
   }, [items])
@@ -69,8 +66,6 @@ export default function NewsTicker({ items = DEFAULT_NEWS, speed = 30, onItemCli
     let animationId: NodeJS.Timeout
 
     const scroll = () => {
-      if (!isPlaying) return
-
       scrollPosition += 1
       container.scrollLeft = scrollPosition
 
@@ -85,7 +80,7 @@ export default function NewsTicker({ items = DEFAULT_NEWS, speed = 30, onItemCli
     animationId = setTimeout(scroll, 100 / speed)
 
     return () => clearTimeout(animationId)
-  }, [speed, isPlaying])
+  }, [speed])
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
@@ -99,43 +94,16 @@ export default function NewsTicker({ items = DEFAULT_NEWS, speed = 30, onItemCli
   }
 
   return (
-    <section className="w-full bg-gradient-to-r from-primary/5 to-secondary/5 border-t border-b border-border py-2">
+    <section className="w-full bg-gradient-to-r from-primary/5 to-secondary/5 border-t border-b border-border py-1">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with Control Button */}
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2 min-w-fit">
-            <span className="font-semibold text-xs uppercase tracking-wider text-primary whitespace-nowrap">
-              Updates
-            </span>
-          </div>
-
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="ml-auto flex items-center gap-2 px-3 py-1 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/30 transition-all duration-200"
-            aria-label={isPlaying ? "Pause ticker" : "Play ticker"}
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="w-4 h-4 text-primary" />
-                <span className="text-xs text-primary font-medium">Pause</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 text-primary" />
-                <span className="text-xs text-primary font-medium">Play</span>
-              </>
-            )}
-          </button>
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-semibold text-xs uppercase tracking-wider text-primary whitespace-nowrap">Updates</span>
         </div>
 
-        {/* News Ticker Container */}
-        <div
-          ref={scrollContainerRef}
-          className="overflow-x-hidden scrollbar-hide"
-          onMouseEnter={() => setIsPlaying(false)}
-          onMouseLeave={() => setIsPlaying(true)}
-        >
-          <div ref={contentRef} className="flex gap-3 whitespace-nowrap pb-1">
+        {/* News Ticker Container - Reduced height and font sizes */}
+        <div ref={scrollContainerRef} className="overflow-x-hidden scrollbar-hide">
+          <div ref={contentRef} className="flex gap-2 whitespace-nowrap pb-1">
             {displayItems.map((item, index) => (
               <div
                 key={`${item.id}-${index}`}
@@ -145,9 +113,9 @@ export default function NewsTicker({ items = DEFAULT_NEWS, speed = 30, onItemCli
                     window.location.href = item.link
                   }
                 }}
-                className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md border cursor-pointer transition-all duration-300 hover:shadow-sm hover:scale-105 text-xs ${getPriorityColor(item.priority)}`}
+                className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border cursor-pointer transition-all duration-300 hover:shadow-sm text-xs ${getPriorityColor(item.priority)}`}
               >
-                <span className="font-medium">{item.text}</span>
+                <span className="font-medium text-xs">{item.text}</span>
               </div>
             ))}
           </div>
