@@ -3,6 +3,16 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function DELETE(request: NextRequest) {
   try {
+    const token = process.env.BLOB_READ_WRITE_TOKEN
+
+    if (!token) {
+      console.error("[delete-image] BLOB_READ_WRITE_TOKEN not found in environment variables")
+      return NextResponse.json(
+        { error: "Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable." },
+        { status: 500 },
+      )
+    }
+
     const { url } = await request.json()
 
     if (!url) {
@@ -16,8 +26,7 @@ export async function DELETE(request: NextRequest) {
 
     console.log("[delete-image] Deleting from Vercel Blob:", url)
 
-    // Delete from Vercel Blob
-    await del(url)
+    await del(url, { token: token })
 
     console.log("[delete-image] Successfully deleted:", url)
 

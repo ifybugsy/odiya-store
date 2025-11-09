@@ -6,6 +6,16 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
+    const token = process.env.BLOB_READ_WRITE_TOKEN
+
+    if (!token) {
+      console.error("[upload] BLOB_READ_WRITE_TOKEN not found in environment variables")
+      return NextResponse.json(
+        { error: "Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable." },
+        { status: 500 },
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get("file") as File
 
@@ -37,6 +47,7 @@ export async function POST(request: NextRequest) {
     const blob = await put(file.name, file, {
       access: "public",
       addRandomSuffix: true, // Prevents filename conflicts
+      token: token, // Explicitly pass the token
     })
 
     console.log("[upload] File uploaded to Vercel Blob:", {
