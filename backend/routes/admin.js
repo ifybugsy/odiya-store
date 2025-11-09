@@ -5,47 +5,18 @@ import { isAdmin } from "../middleware/auth.js"
 
 const router = express.Router()
 
-/* 
----------------------------------------------------
- 🛠️ TEMPORARY ROUTE — ADMIN SETUP (FIRST TIME ONLY)
----------------------------------------------------
-Use this to promote a normal user to admin.
-Send POST request to /api/admin/setup with:
-{
-  "email": "your-email@example.com",
-  "token": "odiya-secret-2025"
-}
-Then remove or comment out this route after setup.
-*/
-router.post("/setup", async (req, res) => {
+router.use(isAdmin)
+
+// Get all items
+router.get("/items", async (req, res) => {
   try {
-    const { email, token } = req.body
+    const items = await Item.find({}).populate("sellerId", "firstName lastName email phone").sort({ createdAt: -1 })
 
-    if (token !== process.env.ADMIN_SETUP_TOKEN) {
-      return res.status(403).json({ error: "Invalid setup token" })
-    }
-
-    const user = await User.findOne({ email })
-    if (!user) {
-      return res.status(404).json({ error: "User not found" })
-    }
-
-    user.isAdmin = true
-    await user.save()
-
-    res.json({ message: `✅ ${email} is now an admin.` })
-  } catch (err) {
-    console.error("Error promoting admin:", err)
-    res.status(500).json({ error: "Server error" })
+    res.json(items)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
   }
 })
-
-/* 
----------------------------------------------------
- ✅ ALL OTHER ADMIN ROUTES BELOW
----------------------------------------------------
-*/
-router.use(isAdmin)
 
 // Get pending items for approval
 router.get("/pending-items", async (req, res) => {
