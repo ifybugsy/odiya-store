@@ -9,7 +9,7 @@ import ItemsTable from "@/components/admin/items-table"
 import { useAuth } from "@/lib/auth-context"
 import { Card } from "@/components/ui/card"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 interface Item {
   _id: string
@@ -74,38 +74,59 @@ export default function ItemsManagementPage() {
 
   const handleApprove = async (itemId: string) => {
     try {
-      await fetch(`${API_URL}/admin/items/${itemId}/approve`, {
+      setItems((prevItems) => prevItems.map((item) => (item._id === itemId ? { ...item, status: "approved" } : item)))
+
+      const res = await fetch(`${API_URL}/admin/items/${itemId}/approve`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       })
-      loadItems()
+
+      if (!res.ok) {
+        loadItems()
+      }
     } catch (error) {
       console.error("Failed to approve item:", error)
+      loadItems()
     }
   }
 
   const handleReject = async (itemId: string) => {
     try {
-      await fetch(`${API_URL}/admin/items/${itemId}/reject`, {
+      setItems((prevItems) => prevItems.map((item) => (item._id === itemId ? { ...item, status: "rejected" } : item)))
+
+      const res = await fetch(`${API_URL}/admin/items/${itemId}/reject`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       })
-      loadItems()
+
+      if (!res.ok) {
+        loadItems()
+      }
     } catch (error) {
       console.error("Failed to reject item:", error)
+      loadItems()
     }
   }
 
   const handleDelete = async (itemId: string) => {
-    if (!confirm("Delete this item permanently?")) return
+    setItems((prevItems) => prevItems.filter((item) => item._id !== itemId))
+
+    // Make the delete request asynchronously
     try {
-      await fetch(`${API_URL}/admin/items/${itemId}`, {
+      const res = await fetch(`${API_URL}/admin/items/${itemId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
-      loadItems()
+
+      if (!res.ok) {
+        // If delete fails, reload items to restore the deleted item
+        console.error("Failed to delete item:", res.status)
+        loadItems()
+      }
     } catch (error) {
       console.error("Failed to delete item:", error)
+      // Reload items on error to restore state
+      loadItems()
     }
   }
 

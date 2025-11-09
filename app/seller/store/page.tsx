@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { Plus, Edit, Trash2, CheckCircle, AlertCircle } from "lucide-react"
+import { validateImageUrl, handleImageError } from "@/lib/image-utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -159,9 +160,10 @@ export default function SellerStorePage() {
                   <div className="h-40 bg-muted relative">
                     {item.images?.[0] && (
                       <img
-                        src={item.images[0] || "/placeholder.svg"}
+                        src={validateImageUrl(item.images[0]) || "/placeholder.svg"}
                         alt={item.title}
                         className="w-full h-full object-cover"
+                        onError={handleImageError}
                       />
                     )}
                     <div

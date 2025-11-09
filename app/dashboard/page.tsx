@@ -9,8 +9,9 @@ import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { LogOut, Plus } from "lucide-react"
+import { validateImageUrl, handleImageError } from "@/lib/image-utils"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://odiya-store.onrender.com/"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function DashboardPage() {
   const { user, token, logout } = useAuth()
@@ -43,7 +44,7 @@ export default function DashboardPage() {
           setItems(await itemsRes.json())
         }
       } catch (error) {
-        console.error("Failed to load data:", error)
+        console.error("[v0] Failed to load data:", error)
       } finally {
         setLoading(false)
       }
@@ -170,9 +171,10 @@ export default function DashboardPage() {
                       <div className="h-40 bg-muted relative">
                         {item.images?.[0] && (
                           <img
-                            src={item.images[0] || "/placeholder.svg"}
+                            src={validateImageUrl(item.images[0]) || "/placeholder.svg"}
                             alt={item.title}
                             className="w-full h-full object-cover"
+                            onError={handleImageError}
                           />
                         )}
                         <div

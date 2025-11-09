@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import { Upload } from "lucide-react"
 import { CATEGORIES } from "@/lib/categories"
+import { isDataUrl, validateImageUrl } from "@/lib/image-utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -29,6 +30,7 @@ export default function EditItemPage() {
     location: "",
     condition: "Good",
     images: [] as string[],
+    existingImages: [] as string[], // Track existing backend images separately
   })
 
   useEffect(() => {
@@ -54,6 +56,8 @@ export default function EditItemPage() {
           return
         }
 
+        const backendImages = (item.images || []).map(validateImageUrl)
+
         setFormData({
           title: item.title,
           description: item.description,
@@ -61,10 +65,12 @@ export default function EditItemPage() {
           price: item.price.toString(),
           location: item.location,
           condition: item.condition,
-          images: item.images || [],
+          images: [], // Start with empty new images
+          existingImages: backendImages, // Keep backend images
         })
         setLoading(false)
       } catch (err: any) {
+        console.error("[v0] Failed to load item:", err)
         setError("Failed to load item")
         setLoading(false)
       }
@@ -90,15 +96,25 @@ export default function EditItemPage() {
           images: [...prev.images, result],
         }))
       }
+      reader.onerror = () => {
+        console.error(`[v0] Failed to read file: ${files[i].name}`)
+      }
       reader.readAsDataURL(files[i])
     }
   }
 
-  const handleRemoveImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }))
+  const handleRemoveImage = (index: number, isExisting: boolean) => {
+    if (isExisting) {
+      setFormData((prev) => ({
+        ...prev,
+        existingImages: prev.existingImages.filter((_, i) => i !== index),
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index),
+      }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,8 +123,10 @@ export default function EditItemPage() {
     setSubmitting(true)
 
     try {
-      if (!formData.images.length) {
-        setError("Please upload at least one image")
+      const allImages = [...formData.existingImages, ...formData.images]
+
+      if (!allImages.length) {
+        setError("Please keep or upload at least one image")
         setSubmitting(false)
         return
       }
@@ -128,6 +146,7 @@ export default function EditItemPage() {
         body: JSON.stringify({
           ...formData,
           price: Number.parseFloat(formData.price),
+          images: allImages.filter((img) => !isDataUrl(img)),
         }),
       })
 
@@ -151,6 +170,7 @@ export default function EditItemPage() {
       alert("Item updated successfully!")
       router.push("/dashboard")
     } catch (err: any) {
+      console.error("[v0] Submit error:", err)
       setError(err.message)
     } finally {
       setSubmitting(false)
@@ -270,31 +290,69 @@ export default function EditItemPage() {
 
               {/* Images */}
               <div>
-                <label className="block text-sm font-medium mb-2">Update Images</label>
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                <label className="block text-sm font-medium mb-2">Images</label>
+
+                {/* Existing Images */}
+                {formData.existingImages.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-muted-foreground mb-2">Current Images</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {formData.existingImages.map((img, idx) => (
+                        <div key={`existing-${idx}`} className="relative">
+                          <img
+                            src={img || "/placeholder.svg"}
+                            alt={`Existing ${idx}`}
+                            className="w-full h-20 object-cover rounded border border-border"
+                            onError={(e) => {
+                              console.error(`[v0] Failed to load existing image ${idx}: ${img}`)
+                              e.currentTarget.src = "/placeholder.svg"
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx, true)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload New Images */}
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center mb-4">
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to add more images</p>
                 </div>
 
                 {formData.images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-2">
-                    {formData.images.map((img, idx) => (
-                      <div key={idx} className="relative">
-                        <img
-                          src={img || "/placeholder.svg"}
-                          alt={`Preview ${idx}`}
-                          className="w-full h-20 object-cover rounded"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">New Images</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {formData.images.map((img, idx) => (
+                        <div key={`new-${idx}`} className="relative">
+                          <img
+                            src={img || "/placeholder.svg"}
+                            alt={`Preview ${idx}`}
+                            className="w-full h-20 object-cover rounded border border-green-200"
+                            onError={(e) => {
+                              console.error(`[v0] Failed to load preview image ${idx}`)
+                              e.currentTarget.src = "/placeholder.svg"
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx, false)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

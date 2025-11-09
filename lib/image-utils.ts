@@ -22,6 +22,27 @@ export function getImageUrl(imagePath: string | undefined | null): string {
   return trimmedPath || "/placeholder.svg"
 }
 
+export const isDataUrl = (url: string): boolean => {
+  return url?.startsWith("data:image/") || false
+}
+
+export const sanitizeImageUrl = (url: string): string => {
+  if (!url) return "/placeholder.svg"
+  const trimmed = url.trim()
+  if (!trimmed) return "/placeholder.svg"
+  // Ensure HTTPS for secure content delivery
+  if (trimmed.startsWith("http://")) {
+    return trimmed.replace("http://", "https://")
+  }
+  return trimmed
+}
+
+export const validateImageUrl = (url: string): string => {
+  if (!url) return "/placeholder.svg"
+  if (isDataUrl(url)) return url
+  return sanitizeImageUrl(url)
+}
+
 export function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   event.currentTarget.src = "/placeholder.svg"
   event.currentTarget.style.opacity = "0.5"

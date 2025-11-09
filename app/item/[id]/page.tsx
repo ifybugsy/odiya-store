@@ -12,6 +12,7 @@ import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "l
 import { ShareButtons } from "@/components/share-buttons"
 import { SaveButton } from "@/components/save-button"
 import RelatedItems from "@/components/related-items"
+import { validateImageUrl, handleImageError } from "@/lib/image-utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -37,7 +38,7 @@ export default function ItemPage() {
         const data = await res.json()
         setItem(data)
       } catch (error) {
-        console.error("Failed to load item:", error)
+        console.error("[v0] Failed to load item:", error)
       } finally {
         setLoading(false)
       }
@@ -62,12 +63,6 @@ export default function ItemPage() {
         return
       }
 
-      console.log("[v0] Sending message to:", `${API_URL}/messages`)
-      console.log("[v0] Message payload:", {
-        itemId: params.id,
-        ...contactData,
-      })
-
       const res = await fetch(`${API_URL}/messages`, {
         method: "POST",
         headers: {
@@ -79,9 +74,6 @@ export default function ItemPage() {
         }),
       })
 
-      console.log("[v0] API Response status:", res.status)
-      console.log("[v0] Response Content-Type:", res.headers.get("content-type"))
-
       let data
       const contentType = res.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
@@ -91,8 +83,6 @@ export default function ItemPage() {
         console.error("[v0] Non-JSON response received:", text.substring(0, 200))
         throw new Error(`Server returned ${res.status}: Invalid response format`)
       }
-
-      console.log("[v0] API Response data:", data)
 
       if (res.ok) {
         setSubmitMessage("✓ Message sent successfully!")
@@ -126,17 +116,6 @@ export default function ItemPage() {
     }
   }
 
-  const sanitizeImageUrl = (url: string): string => {
-    if (!url) return "/placeholder.svg"
-    const trimmed = url.trim()
-    if (!trimmed) return "/placeholder.svg"
-    // Ensure HTTPS for secure content delivery
-    if (trimmed.startsWith("http://")) {
-      return trimmed.replace("http://", "https://")
-    }
-    return trimmed
-  }
-
   if (loading) {
     return (
       <>
@@ -164,8 +143,12 @@ export default function ItemPage() {
     currency: "NGN",
   }).format(item.price)
 
-  const hasMultipleImages = item.images && item.images.length > 1
-  const sanitizedImages = item.images?.filter((img: string) => img?.trim()).map(sanitizeImageUrl) || []
+  const sanitizedImages = (item.images || [])
+    .filter((img: string) => img?.trim())
+    .map(validateImageUrl)
+    .filter((url: string) => url && url !== "/placeholder.svg")
+
+  const hasMultipleImages = sanitizedImages.length > 1
   const currentImage = sanitizedImages[currentImageIndex] || "/placeholder.svg"
 
   return (
@@ -182,9 +165,7 @@ export default function ItemPage() {
                     src={currentImage || "/placeholder.svg"}
                     alt={item.title}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.svg"
-                    }}
+                    onError={handleImageError}
                   />
                 </div>
 
@@ -225,9 +206,7 @@ export default function ItemPage() {
                         src={img || "/placeholder.svg"}
                         alt=""
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg"
-                        }}
+                        onError={handleImageError}
                       />
                     </button>
                   ))}
@@ -276,12 +255,10 @@ export default function ItemPage() {
                   <div className="flex items-center gap-3 mb-4">
                     {item.sellerId?.profileImage ? (
                       <img
-                        src={item.sellerId.profileImage || "/placeholder.svg"}
+                        src={validateImageUrl(item.sellerId.profileImage) || "/placeholder.svg"}
                         alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
                         className="w-10 h-10 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg"
-                        }}
+                        onError={handleImageError}
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
