@@ -10,9 +10,31 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import { Upload } from "lucide-react"
-import { CATEGORIES } from "@/lib/categories"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
+const CATEGORIES = [
+  "Electronics",
+  "Phones",
+  "Laptops",
+  "Computers",
+  "Cars",
+  "Car Parts",
+  "Motorcycles",
+  "Furniture",
+  "Clothing",
+  "Hair Accessories",
+  "Fashion Accessories",
+  "Books",
+  "Sports",
+  "Sports Equipment",
+  "Real Estate",
+  "Services",
+  "Food & Beverages",
+  "Home & Garden",
+  "Toys & Games",
+  "Health & Beauty",
+]
 
 interface ImagePreview {
   file: File
@@ -105,7 +127,9 @@ export default function UploadItemPage() {
         return
       }
 
+      console.log("[v0] Starting image uploads...")
       const uploadedImageUrls: string[] = []
+      let uploadedCount = 0
       let firstError = ""
 
       for (let i = 0; i < imageFiles.length; i++) {
@@ -124,7 +148,7 @@ export default function UploadItemPage() {
 
           if (!uploadRes.ok) {
             const error = await uploadRes.json()
-            console.error(`[upload] Image ${i + 1} failed:`, error)
+            console.error(`[v0] Image ${i + 1} failed:`, error)
             if (!firstError) {
               firstError = `Image ${i + 1}: ${error.error || "Upload failed"}`
             }
@@ -132,23 +156,28 @@ export default function UploadItemPage() {
           }
 
           const uploadData = await uploadRes.json()
+          console.log(`[v0] Image ${i + 1} uploaded:`, uploadData.url)
+
           uploadedImageUrls.push(uploadData.url)
+          uploadedCount++
           setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100))
         } catch (err: any) {
-          console.error(`[upload] Error uploading image ${i + 1}:`, err)
+          console.error(`[v0] Error uploading image ${i + 1}:`, err)
           if (!firstError) {
             firstError = `Image ${i + 1}: ${err.message}`
           }
         }
       }
 
-      if (uploadedImageUrls.length === 0) {
+      if (uploadedCount === 0) {
         setError(firstError || "Failed to upload any images")
         setLoading(false)
         return
       }
 
-      // Now create the item WITH the uploaded image URLs
+      console.log(`[v0] Successfully uploaded ${uploadedCount} images`)
+      console.log("[v0] Image URLs:", uploadedImageUrls)
+
       const createRes = await fetch(`${API_URL}/items`, {
         method: "POST",
         headers: {
@@ -158,16 +187,20 @@ export default function UploadItemPage() {
         body: JSON.stringify({
           ...formData,
           price: Number.parseFloat(formData.price),
-          images: uploadedImageUrls, // Include uploaded image URLs
+          images: uploadedImageUrls, // Include the uploaded image URLs
         }),
       })
 
       if (!createRes.ok) {
         const data = await createRes.json()
+        console.error("[v0] Item creation failed:", data)
         setError(data.error || "Failed to create item")
         setLoading(false)
         return
       }
+
+      const itemData = await createRes.json()
+      console.log("[v0] Item created successfully with images:", itemData)
 
       alert(`Item uploaded successfully! 
 
@@ -184,6 +217,7 @@ After payment, your item will be pending admin approval.`)
 
       router.push("/dashboard")
     } catch (err: any) {
+      console.error("[v0] Upload error:", err)
       setError(err.message)
     } finally {
       setLoading(false)

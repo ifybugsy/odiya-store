@@ -81,8 +81,8 @@ router.post("/", authenticateToken, isSeller, async (req, res) => {
   try {
     const { title, description, category, price, images, location, condition } = req.body
 
-    if (!title || !category || !price || !images) {
-      return res.status(400).json({ error: "Title, category, price, and images are required" })
+    if (!title || !category || !price) {
+      return res.status(400).json({ error: "Title, category, and price are required" })
     }
 
     const item = new Item({
@@ -90,7 +90,7 @@ router.post("/", authenticateToken, isSeller, async (req, res) => {
       description,
       category,
       price,
-      images,
+      images: images || [], // Allow empty array
       sellerId: req.user.id,
       location,
       condition,
@@ -100,6 +100,39 @@ router.post("/", authenticateToken, isSeller, async (req, res) => {
 
     res.status(201).json({
       message: "Item created successfully",
+      item,
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put("/:id/images", authenticateToken, async (req, res) => {
+  try {
+    const { images } = req.body
+
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json({ error: "Images array is required" })
+    }
+
+    const item = await Item.findById(req.params.id)
+
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" })
+    }
+
+    // Only the seller who created the item can update images
+    if (item.sellerId.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" })
+    }
+
+    // Add new images to existing ones
+    item.images = [...item.images, ...images]
+    item.updatedAt = Date.now()
+    await item.save()
+
+    res.json({
+      message: "Images added successfully",
       item,
     })
   } catch (error) {

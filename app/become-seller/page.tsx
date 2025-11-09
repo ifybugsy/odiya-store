@@ -96,7 +96,15 @@ export default function BecomeSellerPage() {
 
       console.log("[v0] User successfully became seller:", { userId: user.id, isSeller: true })
 
-      router.push("/dashboard")
+      alert(`✅ You are now registered as a seller!
+
+IMPORTANT: To upload items, please:
+1. Log out from your account
+2. Log back in with your credentials
+
+This refreshes your session with seller permissions.`)
+
+      router.push("/login")
     } catch (err: any) {
       setError(err.message)
     } finally {

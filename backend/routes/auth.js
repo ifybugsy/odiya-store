@@ -111,6 +111,7 @@ router.post("/login", async (req, res) => {
     }
 
     console.log(`[v0] Login successful: ${normalizedEmail} | isAdmin: ${user.isAdmin} | isSeller: ${user.isSeller}`)
+    console.log(`[v0] JWT will contain: isSeller=${user.isSeller}`)
 
     const token = jwt.sign(
       { id: user._id, email: user.email, isSeller: user.isSeller, isAdmin: user.isAdmin },
