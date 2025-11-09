@@ -38,15 +38,9 @@ export default function Navbar() {
   }
 
   const handleBecomeSeller = () => {
-    if (user) {
-      router.push("/become-seller")
-    } else {
-      router.push("/role-selection?from=seller-button")
-    }
+    router.push("/login")
     setIsOpen(false)
   }
-
-  // These can be re-enabled in the future by uncommenting and restoring the button code below
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
@@ -54,11 +48,11 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/odiya-logo.png"
-              alt="Odiya Store - Buy & Sell Online"
+              src="/bugsymat-logo.png"
+              alt="Bugsymat.shop - Buy & Sell Online"
               width={280}
               height={92}
-              className="h-16 sm:h-20 md:h-24 w-auto"
+              className="h-12 sm:h-18 md:h-20 w-auto"
               priority
             />
           </Link>

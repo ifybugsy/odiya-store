@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
           {/* Brand Section */}
           <div className="md:col-span-2">
-            <h3 className="font-bold text-xl mb-3">Odiya Store</h3>
+            <h3 className="font-bold text-xl mb-3">Bugsymat.shop</h3>
             <p className="text-sm opacity-80 mb-6 leading-relaxed">
               Nigeria's trusted online marketplace for buying and selling. Connect with thousands of buyers and sellers
               nationwide.
@@ -104,7 +104,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@odiyastore.com" className="opacity-75 hover:opacity-100 transition">
+                <a href="mailto:support@bugsymat.shop" className="opacity-75 hover:opacity-100 transition">
                   Email Support
                 </a>
               </li>
@@ -117,8 +117,8 @@ export default function Footer() {
             <div className="space-y-3.5 text-sm">
               <div className="flex items-start gap-3">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 opacity-80" />
-                <a href="mailto:support@odiyastore.com" className="opacity-75 hover:opacity-100 transition break-all">
-                  support@odiyastore.com
+                <a href="mailto:support@bugsymat.shop" className="opacity-75 hover:opacity-100 transition break-all">
+                  support@bugsymat.shop
                 </a>
               </div>
               <div className="flex items-start gap-3">
@@ -135,7 +135,7 @@ export default function Footer() {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs opacity-60 text-center md:text-left">
-              © {currentYear} Odiya Store. All rights reserved Ifybugsy Digital Technologies Ltd. | Made for Nigerian buyers and sellers
+              © {currentYear} Bugsymat All rights reserved Ifybugsy Digital Technologies Ltd. | Made for Nigerian buyers and sellers
             </p>
             <div className="flex gap-6 text-xs opacity-60">
               <Link href="/privacy" className="hover:opacity-100 transition">
@@ -144,7 +144,7 @@ export default function Footer() {
               <Link href="/terms" className="hover:opacity-100 transition">
                 Terms
               </Link>
-              <a href="mailto:support@odiyastore.com" className="hover:opacity-100 transition">
+              <a href="mailto:support@bugsymat.shop" className="hover:opacity-100 transition">
                 Report
               </a>
             </div>

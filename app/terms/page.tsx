@@ -14,7 +14,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold">1. Agreement to Terms</h2>
               <p className="text-muted-foreground">
-                By using Odiya Store, you agree to these terms and conditions. If you do not agree, please do not use
+                By using Bugsymat.shop, you agree to these terms and conditions. If you do not agree, please do not use
                 our platform.
               </p>
             </section>
@@ -51,8 +51,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold">5. Limitation of Liability</h2>
               <p className="text-muted-foreground">
-                Odiya Store is provided "as is". We are not responsible for any losses or damages arising from your use
-                of the platform.
+                Bugsymat.shop is provided "as is". We are not responsible for any losses or damages arising from your
+                use of the platform.
               </p>
             </section>
 

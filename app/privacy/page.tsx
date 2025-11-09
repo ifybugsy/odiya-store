@@ -54,7 +54,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-2xl font-bold">6. Contact Us</h2>
-              <p className="text-muted-foreground">For privacy concerns, please email us at privacy@odiyastore.com</p>
+              <p className="text-muted-foreground">For privacy concerns, please email us at privacy@bugsymat.shop</p>
             </section>
           </Card>
         </div>

@@ -119,7 +119,9 @@ This refreshes your session with seller permissions.`)
         <div className="max-w-2xl mx-auto px-4">
           <Card className="p-8">
             <h1 className="text-3xl font-bold mb-2">Become a Seller</h1>
-            <p className="text-muted-foreground mb-8">Fill in your business details to start selling on Odiya Store</p>
+            <p className="text-muted-foreground mb-8">
+              Fill in your business details to start selling on Bugsymat.shop
+            </p>
 
             {error && (
               <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-4 text-destructive">
