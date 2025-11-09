@@ -127,7 +127,7 @@ export default function UploadItemPage() {
         return
       }
 
-      console.log("[v0] Starting image uploads...")
+      console.log("[upload-item] Starting image uploads to Vercel Blob...")
       const uploadedImageUrls: string[] = []
       let uploadedCount = 0
       let firstError = ""
@@ -138,6 +138,7 @@ export default function UploadItemPage() {
         uploadFormData.append("file", file)
 
         try {
+          // Upload to Vercel Blob via Next.js API route
           const uploadRes = await fetch("/api/upload", {
             method: "POST",
             headers: {
@@ -148,7 +149,7 @@ export default function UploadItemPage() {
 
           if (!uploadRes.ok) {
             const error = await uploadRes.json()
-            console.error(`[v0] Image ${i + 1} failed:`, error)
+            console.error(`[upload-item] Image ${i + 1} failed:`, error)
             if (!firstError) {
               firstError = `Image ${i + 1}: ${error.error || "Upload failed"}`
             }
@@ -156,13 +157,14 @@ export default function UploadItemPage() {
           }
 
           const uploadData = await uploadRes.json()
-          console.log(`[v0] Image ${i + 1} uploaded:`, uploadData.url)
+          console.log(`[upload-item] Image ${i + 1} uploaded to Blob:`, uploadData.url)
 
+          // Store the permanent Blob URL
           uploadedImageUrls.push(uploadData.url)
           uploadedCount++
           setUploadProgress(Math.round(((i + 1) / imageFiles.length) * 100))
         } catch (err: any) {
-          console.error(`[v0] Error uploading image ${i + 1}:`, err)
+          console.error(`[upload-item] Error uploading image ${i + 1}:`, err)
           if (!firstError) {
             firstError = `Image ${i + 1}: ${err.message}`
           }
@@ -175,8 +177,8 @@ export default function UploadItemPage() {
         return
       }
 
-      console.log(`[v0] Successfully uploaded ${uploadedCount} images`)
-      console.log("[v0] Image URLs:", uploadedImageUrls)
+      console.log(`[upload-item] Successfully uploaded ${uploadedCount} images to Vercel Blob`)
+      console.log("[upload-item] Permanent Blob URLs:", uploadedImageUrls)
 
       const createRes = await fetch(`${API_URL}/items`, {
         method: "POST",
@@ -187,20 +189,20 @@ export default function UploadItemPage() {
         body: JSON.stringify({
           ...formData,
           price: Number.parseFloat(formData.price),
-          images: uploadedImageUrls, // Include the uploaded image URLs
+          images: uploadedImageUrls, // Permanent Blob URLs
         }),
       })
 
       if (!createRes.ok) {
         const data = await createRes.json()
-        console.error("[v0] Item creation failed:", data)
+        console.error("[upload-item] Item creation failed:", data)
         setError(data.error || "Failed to create item")
         setLoading(false)
         return
       }
 
       const itemData = await createRes.json()
-      console.log("[v0] Item created successfully with images:", itemData)
+      console.log("[upload-item] Item created successfully with permanent images:", itemData)
 
       alert(`Item uploaded successfully! 
 
@@ -217,7 +219,7 @@ After payment, your item will be pending admin approval.`)
 
       router.push("/dashboard")
     } catch (err: any) {
-      console.error("[v0] Upload error:", err)
+      console.error("[upload-item] Upload error:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -349,6 +351,7 @@ After payment, your item will be pending admin approval.`)
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently in Vercel Blob</p>
                 </div>
 
                 {uploadProgress > 0 && (
@@ -359,7 +362,7 @@ After payment, your item will be pending admin approval.`)
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Uploading images: {uploadProgress}%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Uploading to Vercel Blob: {uploadProgress}%</p>
                   </div>
                 )}
 

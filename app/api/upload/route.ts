@@ -1,3 +1,4 @@
+import { put } from "@vercel/blob"
 import { type NextRequest, NextResponse } from "next/server"
 
 export const maxDuration = 300 // 5 minutes for large file uploads
@@ -5,7 +6,6 @@ export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    // Disable automatic body parsing for this route
     const formData = await request.formData()
     const file = formData.get("file") as File
 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Validate file type (not size, size limit is on backend)
+    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
@@ -22,54 +22,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log file info for debugging
+    // Validate file size (500MB limit)
+    const maxSize = 500 * 1024 * 1024 // 500MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: "File is too large. Maximum size is 500MB." }, { status: 413 })
+    }
+
     console.log("[upload] Processing file:", {
       name: file.name,
       size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
       type: file.type,
     })
 
-    // Forward to backend API with streaming
-    const backendFormData = new FormData()
-    backendFormData.append("file", file)
-
-    const authHeader = request.headers.get("authorization")
-    const token = authHeader?.replace("Bearer ", "") || ""
-
-    const backendUrl = process.env.BACKEND_API_URL || "https://odiya.store"
-    const uploadUrl = `${backendUrl}/upload`
-
-    console.log("[upload] Forwarding to backend:", { uploadUrl, fileName: file.name })
-
-    const backendResponse = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: backendFormData,
-      // Allow longer timeout for large files
-      signal: AbortSignal.timeout(300000), // 5 minutes
+    const blob = await put(file.name, file, {
+      access: "public",
+      addRandomSuffix: true, // Prevents filename conflicts
     })
 
-    if (!backendResponse.ok) {
-      const errorText = await backendResponse.text()
-      let errorData: any
-      try {
-        errorData = JSON.parse(errorText)
-      } catch {
-        console.error("[upload] Backend error response:", {
-          status: backendResponse.status,
-          statusText: backendResponse.statusText,
-          rawText: errorText,
-        })
-        errorData = { error: errorText || `Backend error: ${backendResponse.statusText}` }
-      }
-      return NextResponse.json(errorData, { status: backendResponse.status })
-    }
+    console.log("[upload] File uploaded to Vercel Blob:", {
+      url: blob.url,
+      pathname: blob.pathname,
+      size: `${(blob.size / 1024 / 1024).toFixed(2)}MB`,
+    })
 
-    const data = await backendResponse.json()
-    console.log("[upload] Success:", data)
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json(
+      {
+        message: "File uploaded successfully",
+        url: blob.url,
+        filename: file.name,
+        size: file.size,
+        type: file.type,
+      },
+      { status: 201 },
+    )
   } catch (error: any) {
     console.error("[upload] Error:", error)
 
