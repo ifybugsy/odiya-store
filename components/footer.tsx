@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
           {/* Brand Section */}
           <div className="md:col-span-2">
-            <h3 className="font-bold text-xl mb-3">Bugsymat.shop</h3>
+            <h3 className="font-bold text-xl mb-3">Bugsymart.shop</h3>
             <p className="text-sm opacity-80 mb-6 leading-relaxed">
               Nigeria's trusted online marketplace for buying and selling. Connect with thousands of buyers and sellers
               nationwide.
@@ -135,7 +135,7 @@ export default function Footer() {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs opacity-60 text-center md:text-left">
-              © {currentYear} Bugsymat All rights reserved Ifybugsy Digital Technologies Ltd. | Made for Nigerian buyers and sellers
+              © {currentYear} Bugsymart All rights reserved Ifybugsy Digital Technologies Ltd. | Made for Nigerian buyers and sellers
             </p>
             <div className="flex gap-6 text-xs opacity-60">
               <Link href="/privacy" className="hover:opacity-100 transition">
