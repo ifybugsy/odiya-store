@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import ItemCard from "./item-card"
+import { apiRequest } from "@/lib/api-utils"
 
 interface RelatedItemsProps {
   category: string
@@ -18,13 +19,7 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
     const fetchRelatedItems = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/items?category=${encodeURIComponent(category)}&limit=${limit + 1}`)
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch items")
-        }
-
-        const data = await res.json()
+        const data = await apiRequest(`/items?category=${encodeURIComponent(category)}&limit=${limit + 1}`)
 
         const itemsList = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
 
@@ -39,7 +34,7 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
         setError("")
       } catch (err) {
         console.error("[v0] Error fetching related items:", err)
-        setError("")
+        setError(err instanceof Error ? err.message : "Failed to load related items")
         setItems([])
       } finally {
         setLoading(false)

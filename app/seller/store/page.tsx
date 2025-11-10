@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { Plus, Edit, Trash2, CheckCircle, AlertCircle } from "lucide-react"
-import { validateImageUrl, handleImageError } from "@/lib/image-utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -160,10 +159,9 @@ export default function SellerStorePage() {
                   <div className="h-40 bg-muted relative">
                     {item.images?.[0] && (
                       <img
-                        src={validateImageUrl(item.images[0]) || "/placeholder.svg"}
+                        src={item.images[0] || "/placeholder.svg"}
                         alt={item.title}
                         className="w-full h-full object-cover"
-                        onError={handleImageError}
                       />
                     )}
                     <div
@@ -207,11 +205,9 @@ export default function SellerStorePage() {
                           </Link>
                         </>
                       )}
-                      <button onClick={() => deleteItem(item._id)} className="flex-1">
-                        <Button variant="destructive" size="sm" className="w-full">
-                          <Trash2 className="w-3 h-3 mr-1" /> Delete
-                        </Button>
-                      </button>
+                      <Button onClick={() => deleteItem(item._id)} variant="destructive" size="sm" className="flex-1">
+                        <Trash2 className="w-3 h-3 mr-1" /> Delete
+                      </Button>
                     </div>
                   </div>
                 </Card>

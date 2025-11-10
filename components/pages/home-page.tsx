@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
-import NewsTicker from "@/components/news-ticker"
-import { Search, Filter } from "lucide-react"
-import API_URL from "@/lib/api-config"
+import { Search, Filter, AlertCircle } from "lucide-react"
+import { getApiUrl, apiRequest, validateApiConfig } from "@/lib/api-utils"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
 
@@ -20,40 +19,34 @@ export default function HomePage() {
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [configWarning, setConfigWarning] = useState("")
+
+  useEffect(() => {
+    const config = validateApiConfig()
+    if (!config.isValid && config.warnings.length > 0) {
+      setConfigWarning(config.warnings[0])
+      console.warn("[v0] API Configuration Issues:", config.warnings)
+    }
+  }, [])
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log("[v0] Loading categories from:", `${API_URL}/items/categories`)
+        console.log("[v0] Loading categories from:", `${getApiUrl()}/items/categories`)
 
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => {
-          console.log("[v0] Aborting request - timeout after 10 seconds")
-          controller.abort()
-        }, 10000)
+        const data = await apiRequest("/items/categories")
 
-        const res = await fetch(`${API_URL}/items/categories`, {
-          signal: controller.signal,
-          credentials: "include",
-        })
-
-        clearTimeout(timeoutId)
-
-        if (!res.ok) {
-          throw new Error(`Failed to load categories: ${res.status}`)
-        }
-
-        const data = await res.json()
         console.log("[v0] Categories loaded:", data.categories)
         setCategories(data.categories || FALLBACK_CATEGORIES)
-      } catch (error: any) {
-        if (error.name === "AbortError") {
-          console.error("[v0] Category request aborted/timed out:", error.message)
-        } else {
-          console.error("[v0] Failed to load categories:", error)
-        }
+        setConfigWarning("") // Clear warning if successful
+      } catch (error) {
+        console.error("[v0] Failed to load categories:", error)
         console.log("[v0] Using fallback categories")
         setCategories(FALLBACK_CATEGORIES)
+
+        if (error instanceof Error) {
+          setConfigWarning(error.message)
+        }
       }
     }
 
@@ -66,26 +59,14 @@ export default function HomePage() {
       setError("")
       setIsLoading(true)
       try {
-        let url = `${API_URL}/items?page=${pageNum}`
-        if (selectedCategory) url += `&category=${selectedCategory}`
-        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`
+        let endpoint = `/items?page=${pageNum}`
+        if (selectedCategory) endpoint += `&category=${selectedCategory}`
+        if (searchQuery) endpoint += `&search=${encodeURIComponent(searchQuery)}`
 
-        console.log("[v0] Loading items from:", url)
+        console.log("[v0] Loading items from:", getApiUrl() + endpoint)
 
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        const data = await apiRequest(endpoint)
 
-        const res = await fetch(url, {
-          signal: controller.signal,
-        })
-
-        clearTimeout(timeoutId)
-
-        if (!res.ok) {
-          throw new Error(`Failed to load items: ${res.status}`)
-        }
-
-        const data = await res.json()
         console.log("[v0] Items loaded:", data.items?.length || 0)
 
         if (append) {
@@ -95,6 +76,7 @@ export default function HomePage() {
         }
 
         setHasMore(pageNum < data.pages)
+        setConfigWarning("") // Clear warning if successful
       } catch (error) {
         console.error("[v0] Failed to load items:", error)
         setError(error instanceof Error ? error.message : "Failed to load items")
@@ -136,8 +118,23 @@ export default function HomePage() {
         <HeroSlider />
       </section>
 
-      {/* Scrolling News Ticker */}
-      <NewsTicker />
+      {configWarning && (
+        <section className="bg-yellow-50 border-b border-yellow-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-yellow-800">API Configuration Issue</p>
+                <p className="text-xs text-yellow-700 mt-1">{configWarning}</p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  Please set the <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_API_URL</code> environment
+                  variable to your backend API URL.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Search Section */}
       <section className="bg-white border-b border-border sticky top-16 z-40">
@@ -191,7 +188,13 @@ export default function HomePage() {
       <section id="items" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
-            {error}
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Error loading items</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </div>
           </div>
         )}
 

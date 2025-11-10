@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight, Star } from "lucide-react"
 import { SaveButton } from "@/components/save-button"
 import { getUserInitials } from "@/lib/user-utils"
+import { getImageUrl, handleImageError } from "@/lib/image-utils"
 
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -31,7 +32,7 @@ export default function ItemCard({ item }: { item: any }) {
   }
 
   const hasMultipleImages = item.images && item.images.length > 1
-  const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
+  const currentImage = getImageUrl(item.images?.[currentImageIndex])
 
   return (
     <Link href={`/item/${item._id}`}>
@@ -41,9 +42,7 @@ export default function ItemCard({ item }: { item: any }) {
             src={currentImage || "/placeholder.svg"}
             alt={`${item.title} - Image ${currentImageIndex + 1}`}
             className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg"
-            }}
+            onError={handleImageError}
           />
 
           <div className="absolute top-2 left-2 z-10">
@@ -91,17 +90,10 @@ export default function ItemCard({ item }: { item: any }) {
           <div className="flex items-center gap-2 mt-2">
             {item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? (
               <img
-                src={item.sellerId.profileImage || "/placeholder.svg"}
+                src={getImageUrl(item.sellerId.profileImage) || "/placeholder.svg"}
                 alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
                 className="w-6 h-6 rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none"
-                  const parent = e.currentTarget.parentElement
-                  if (parent) {
-                    const fallback = parent.querySelector("[data-fallback]")
-                    if (fallback) fallback.style.display = "flex"
-                  }
-                }}
+                onError={handleImageError}
               />
             ) : null}
             <div
