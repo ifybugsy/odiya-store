@@ -1,15 +1,19 @@
 "use client"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+import { getApiUrl, validateEnvironment, getConfigurationHelp } from "./env-config"
 
-// Check if API URL is properly configured
-const isProduction = typeof window !== "undefined" && window.location.hostname !== "localhost"
-const isConfigured = API_URL !== "http://localhost:5000/api" || !isProduction
+const API_URL = getApiUrl()
 
-if (!isConfigured && typeof window !== "undefined") {
-  console.error("[v0] CRITICAL: NEXT_PUBLIC_API_URL is not configured for production. Current value:", API_URL)
-  console.error("[v0] Please set NEXT_PUBLIC_API_URL environment variable to your deployed backend URL")
-  console.error("[v0] Example: https://your-backend-api.com/api")
+if (typeof window !== "undefined") {
+  const config = validateEnvironment()
+
+  if (!config.isConfigured) {
+    console.error("=".repeat(80))
+    console.error("[v0] CRITICAL: API Configuration Error")
+    console.error("=".repeat(80))
+    console.error(getConfigurationHelp())
+    console.error("=".repeat(80))
+  }
 }
 
 export const apiConfig = {
@@ -17,15 +21,22 @@ export const apiConfig = {
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // Increased to 10 seconds for slower connections
+  timeout: 10000,
 }
 
 export async function apiCall(endpoint: string, options: RequestInit & { method?: string } = {}) {
+  const config = validateEnvironment()
+
+  if (!config.isConfigured) {
+    throw new Error(
+      "API not configured. " + config.errors.join(" ") + " Please set NEXT_PUBLIC_API_URL environment variable.",
+    )
+  }
+
   const url = `${API_URL}${endpoint}`
   const token = typeof window !== "undefined" ? localStorage.getItem("auth") : null
   let authToken: string | null = null
 
-  // Extract token from auth JSON
   if (token) {
     try {
       const parsed = JSON.parse(token)
@@ -74,7 +85,10 @@ export async function apiCall(endpoint: string, options: RequestInit & { method?
     if (contentType && contentType.includes("text/html")) {
       console.error("[v0] Received HTML instead of JSON - API endpoint not found")
       throw new Error(
-        `API endpoint not found: ${endpoint}. Backend may not be deployed or NEXT_PUBLIC_API_URL is incorrect.`,
+        `API endpoint not found: ${endpoint}. ` +
+          `The backend returned HTML (likely a 404 page) instead of JSON. ` +
+          `This means the endpoint doesn't exist or the backend is not deployed at ${API_URL}. ` +
+          `Please verify your backend is running and NEXT_PUBLIC_API_URL is correct.`,
       )
     }
 
@@ -112,7 +126,9 @@ export async function apiCall(endpoint: string, options: RequestInit & { method?
       }
       if (error.message.includes("Failed to fetch")) {
         throw new Error(
-          `Cannot connect to backend API at ${API_URL}. Please ensure the backend is running and accessible.`,
+          `Cannot connect to backend API at ${API_URL}. ` +
+            `Please ensure: 1) Backend is deployed and running, ` +
+            `2) NEXT_PUBLIC_API_URL is correct, 3) CORS is configured on backend.`,
         )
       }
       console.error("[v0] API Error:", error.message)
