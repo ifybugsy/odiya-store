@@ -2,14 +2,22 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-export default API_URL
+// Check if API URL is properly configured
+const isProduction = typeof window !== "undefined" && window.location.hostname !== "localhost"
+const isConfigured = API_URL !== "http://localhost:5000/api" || !isProduction
+
+if (!isConfigured && typeof window !== "undefined") {
+  console.error("[v0] CRITICAL: NEXT_PUBLIC_API_URL is not configured for production. Current value:", API_URL)
+  console.error("[v0] Please set NEXT_PUBLIC_API_URL environment variable to your deployed backend URL")
+  console.error("[v0] Example: https://your-backend-api.com/api")
+}
 
 export const apiConfig = {
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 5000, // 5 second timeout
+  timeout: 10000, // Increased to 10 seconds for slower connections
 }
 
 export async function apiCall(endpoint: string, options: RequestInit & { method?: string } = {}) {
@@ -59,7 +67,16 @@ export async function apiCall(endpoint: string, options: RequestInit & { method?
       endpoint,
       status: response.status,
       statusText: response.statusText,
+      contentType: response.headers.get("content-type"),
     })
+
+    const contentType = response.headers.get("content-type")
+    if (contentType && contentType.includes("text/html")) {
+      console.error("[v0] Received HTML instead of JSON - API endpoint not found")
+      throw new Error(
+        `API endpoint not found: ${endpoint}. Backend may not be deployed or NEXT_PUBLIC_API_URL is incorrect.`,
+      )
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
@@ -93,12 +110,17 @@ export async function apiCall(endpoint: string, options: RequestInit & { method?
         console.error("[v0] API Timeout:", { endpoint, timeout: apiConfig.timeout })
         throw new Error(`Request timeout after ${apiConfig.timeout}ms`)
       }
+      if (error.message.includes("Failed to fetch")) {
+        throw new Error(
+          `Cannot connect to backend API at ${API_URL}. Please ensure the backend is running and accessible.`,
+        )
+      }
       console.error("[v0] API Error:", error.message)
+      throw error
     } else {
       console.error("[v0] API Error:", error)
+      throw new Error("An unexpected error occurred")
     }
-
-    throw error
   }
 }
 
@@ -125,4 +147,8 @@ export async function apiCallWithRetry(
   }
 
   throw lastError || new Error("API call failed after retries")
+}
+
+export function getApiBaseUrl() {
+  return API_URL
 }
