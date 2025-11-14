@@ -42,7 +42,7 @@ export default function TermsPage() {
               <p className="text-muted-foreground">Sellers must:</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                 <li>Provide accurate item descriptions</li>
-                <li>Pay ₦500 upload fee per item</li>
+                <li>Pay ₦150 upload fee per item</li>
                 <li>Deliver items as described</li>
                 <li>Respond to buyer inquiries professionally</li>
               </ul>

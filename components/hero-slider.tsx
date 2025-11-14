@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 const slides = [
   {
     id: 1,
-    title: "Welcome to Odiya Store",
+    title: "Welcome to bugsymart",
     subtitle: "A new approach to shopping",
     description: "Buy and sell online with ease. Connect with trusted sellers and buyers.",
     bgColor: "from-blue-600 to-blue-400",
@@ -21,7 +21,7 @@ const slides = [
     id: 2,
     title: "Become a Seller",
     subtitle: "Monetize Your Marketplace",
-    description: "Upload items for just ₦500 and start earning today. Reach thousands of buyers.",
+    description: "Upload items for just ₦150 and start earning today. Reach thousands of buyers.",
     bgColor: "from-purple-600 to-purple-400",
     cta: "Become a Seller",
     icon: "📦",
@@ -52,7 +52,7 @@ const slides = [
     id: 5,
     title: "Wide Selection",
     subtitle: "Everything You Need",
-    description: "Cars, Electronics, Furniture, Clothing and more. Find anything on Odiya Store.",
+    description: "Cars, Electronics, Furniture, Clothing and more. Find anything on bugsymart.",
     bgColor: "from-orange-600 to-orange-400",
     cta: "Browse Categories",
     icon: "🎯",
