@@ -124,27 +124,7 @@ export function validateEnvironment(): EnvironmentConfig {
  * Log environment configuration for debugging
  */
 export function logEnvironmentConfig(): void {
-  const config = validateEnvironment()
-
-  console.group("[v0] Environment Configuration")
-  console.log("Environment:", config.environment)
-  console.log("API URL:", config.apiUrl || "(not set)")
-  console.log("Backend URL:", config.backendUrl || "(not set)")
-  console.log("Configured:", config.isConfigured ? "✓" : "✗")
-
-  if (config.errors.length > 0) {
-    console.group("❌ Errors")
-    config.errors.forEach((error) => console.error(error))
-    console.groupEnd()
-  }
-
-  if (config.warnings.length > 0) {
-    console.group("⚠️ Warnings")
-    config.warnings.forEach((warning) => console.warn(warning))
-    console.groupEnd()
-  }
-
-  console.groupEnd()
+  // Silent - only log when explicitly called for debugging
 }
 
 /**
@@ -254,9 +234,4 @@ export function getConfigurationHelp(): string {
   help += "See BACKEND_DEPLOYMENT_GUIDE.md for detailed instructions\n"
 
   return help
-}
-
-// Initialize and log configuration on module load (client-side only)
-if (typeof window !== "undefined") {
-  logEnvironmentConfig()
 }

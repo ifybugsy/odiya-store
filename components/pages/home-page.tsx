@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
 import { Search, Filter, AlertCircle } from "lucide-react"
-import { getApiUrl, apiRequest, validateApiConfig } from "@/lib/api-utils"
+import { apiRequest, validateApiConfig } from "@/lib/api-utils"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
 
@@ -25,23 +25,16 @@ export default function HomePage() {
     const config = validateApiConfig()
     if (!config.isValid && config.warnings.length > 0) {
       setConfigWarning(config.warnings[0])
-      console.warn("[v0] API Configuration Issues:", config.warnings)
     }
   }, [])
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log("[v0] Loading categories from:", `${getApiUrl()}/items/categories`)
-
         const data = await apiRequest("/items/categories")
-
-        console.log("[v0] Categories loaded:", data.categories)
         setCategories(data.categories || FALLBACK_CATEGORIES)
         setConfigWarning("") // Clear warning if successful
       } catch (error) {
-        console.error("[v0] Failed to load categories:", error)
-        console.log("[v0] Using fallback categories")
         setCategories(FALLBACK_CATEGORIES)
 
         if (error instanceof Error) {
@@ -63,11 +56,7 @@ export default function HomePage() {
         if (selectedCategory) endpoint += `&category=${selectedCategory}`
         if (searchQuery) endpoint += `&search=${encodeURIComponent(searchQuery)}`
 
-        console.log("[v0] Loading items from:", getApiUrl() + endpoint)
-
         const data = await apiRequest(endpoint)
-
-        console.log("[v0] Items loaded:", data.items?.length || 0)
 
         if (append) {
           setItems((prev) => [...prev, ...data.items])
@@ -78,7 +67,6 @@ export default function HomePage() {
         setHasMore(pageNum < data.pages)
         setConfigWarning("") // Clear warning if successful
       } catch (error) {
-        console.error("[v0] Failed to load items:", error)
         setError(error instanceof Error ? error.message : "Failed to load items")
         if (!append) {
           setItems([])
