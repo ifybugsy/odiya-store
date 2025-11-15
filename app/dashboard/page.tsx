@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
-import { LogOut, Plus } from "lucide-react"
+import { LogOut, Plus } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -94,24 +94,41 @@ export default function DashboardPage() {
             <Card className="p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">Profile Information</h2>
               {profile && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-semibold">
-                      {profile.firstName} {profile.lastName}
-                    </p>
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                      {profile.profilePicture ? (
+                        <img
+                          src={profile.profilePicture || "/placeholder.svg"}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-4xl font-bold text-muted-foreground">
+                          {profile.firstName?.[0]}{profile.lastName?.[0]}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-semibold">{profile.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-semibold">{profile.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">City</p>
-                    <p className="font-semibold">{profile.city || "Not set"}</p>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-semibold">
+                        {profile.firstName} {profile.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-semibold">{profile.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-semibold">{profile.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">City</p>
+                      <p className="font-semibold">{profile.city || "Not set"}</p>
+                    </div>
                   </div>
                 </div>
               )}

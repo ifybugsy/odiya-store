@@ -3,13 +3,13 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
-import { Upload } from "lucide-react"
+import { Upload } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -213,7 +213,7 @@ Account Number: 1028301845
 Account Name: Ifybugsy Digital Technologies Ltd
 Bank Name: UBA
 
-Purpose: BugsyMart Upload Fee
+Purpose: Odiya Store Upload Fee
 
 After payment, your item will be pending admin approval.`)
 
@@ -300,8 +300,8 @@ After payment, your item will be pending admin approval.`)
                     <option value="New">New</option>
                     <option value="Like New">Like New</option>
                     <option value="Good">Good</option>
-                    <option value="Fair">Fairly Used</option>
-                    <option value="Fair">Foreign Used</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Foreign Used">Foreign Used</option>
                   </select>
                 </div>
               </div>
@@ -352,7 +352,7 @@ After payment, your item will be pending admin approval.`)
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Use clear images</p>
+                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently in Vercel Blob</p>
                 </div>
 
                 {uploadProgress > 0 && (
@@ -363,7 +363,7 @@ After payment, your item will be pending admin approval.`)
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Your Item is Uploading: {uploadProgress}%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Uploading to Vercel Blob: {uploadProgress}%</p>
                   </div>
                 )}
 

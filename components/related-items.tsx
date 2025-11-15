@@ -50,7 +50,7 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Related Items</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-muted rounded-lg h-64 animate-pulse" />
           ))}
@@ -66,7 +66,7 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Related Items in {category}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item) => (
           <ItemCard key={item._id} item={item} />
         ))}

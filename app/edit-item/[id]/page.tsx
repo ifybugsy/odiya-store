@@ -3,13 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter } from 'next/navigation'
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
-import { Upload } from "lucide-react"
+import { Upload } from 'lucide-react'
 import { CATEGORIES } from "@/lib/categories"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
@@ -225,6 +225,7 @@ export default function EditItemPage() {
                     <option value="Like New">Like New</option>
                     <option value="Good">Good</option>
                     <option value="Fair">Fair</option>
+                    <option value="Foreign Used">Foreign Used</option>
                   </select>
                 </div>
               </div>
