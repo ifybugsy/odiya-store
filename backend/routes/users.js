@@ -1,8 +1,11 @@
 import express from "express"
 import User from "../models/User.js"
 import Item from "../models/Item.js"
+import { authenticateToken } from "../middleware/auth.js"
 
 const router = express.Router()
+
+router.use(authenticateToken)
 
 // Get user profile
 router.get("/profile", async (req, res) => {
@@ -42,10 +45,10 @@ router.put("/profile", async (req, res) => {
 // Become a seller
 router.put("/become-seller", async (req, res) => {
   try {
-    const { businessName, businessDescription, bankAccountNumber, bankAccountName, bankName } = req.body
+    const { businessName, businessDescription } = req.body
 
-    if (!businessName || !bankAccountNumber || !bankAccountName || !bankName) {
-      return res.status(400).json({ error: "All seller details are required" })
+    if (!businessName) {
+      return res.status(400).json({ error: "Business name is required" })
     }
 
     const user = await User.findByIdAndUpdate(
@@ -54,12 +57,11 @@ router.put("/become-seller", async (req, res) => {
         isSeller: true,
         businessName,
         businessDescription,
-        bankAccountNumber,
-        bankAccountName,
-        bankName,
       },
       { new: true },
     ).select("-password")
+
+    console.log(`[v0] User upgraded to seller: ${user.email} | isSeller: ${user.isSeller}`)
 
     res.json({
       message: "You are now a seller",

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,21 +13,17 @@ import { useAuth } from "@/lib/auth-context"
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export default function BecomeSellerPage() {
-  const { user, token, setUser } = useAuth()
+  const { user, token, login } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     businessName: "",
     businessDescription: "",
-    bankAccountNumber: "",
-    bankAccountName: "",
-    bankName: "",
   })
 
   useEffect(() => {
     if (user && user.isSeller) {
-      console.log("[v0] User is already a seller, redirecting to dashboard")
       router.push("/dashboard")
     }
   }, [user, router])
@@ -89,22 +85,27 @@ export default function BecomeSellerPage() {
 
       const data = await res.json()
 
-      setUser({
-        ...user,
-        isSeller: true,
+      const refreshRes = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       })
 
-      console.log("[v0] User successfully became seller:", { userId: user.id, isSeller: true })
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json()
+        // Update auth context with new token that has isSeller: true
+        login(refreshData.token, refreshData.user)
+        
+        alert("✅ You are now registered as a seller! You can now upload items.")
+        router.push("/upload-item")
+      } else {
+        alert(`✅ You are now registered as a seller!
 
-      alert(`✅ You are now registered as a seller!
-
-IMPORTANT: To upload items, please:
-1. Log out from your account
-2. Log back in with your credentials
-
-This refreshes your session with seller permissions.`)
-
-      router.push("/login")
+Please log out and log back in to activate your seller permissions.`)
+        router.push("/login")
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -153,48 +154,11 @@ This refreshes your session with seller permissions.`)
                 />
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-sm">Bank Account Details for Payments</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Bank Account Number*</label>
-                    <Input
-                      placeholder="e.g., 0123456789"
-                      name="bankAccountNumber"
-                      value={formData.bankAccountNumber}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Account Name*</label>
-                    <Input
-                      placeholder="Account Holder Name"
-                      name="bankAccountName"
-                      value={formData.bankAccountName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Bank Name*</label>
-                    <Input
-                      placeholder="e.g., First Bank, GTBank, Zenith Bank"
-                      name="bankName"
-                      value={formData.bankName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
-                <p className="font-semibold mb-2">Upload Fee: ₦500 per item</p>
+                <p className="font-semibold mb-2">Upload Fee: ₦150 per item</p>
                 <p className="text-muted-foreground">
-                  Each time you list an item, you'll be charged ₦500 upload fee. Payment can be made via bank transfer.
+                  Each time you list an item, you'll be charged ₦150 upload fee. Payment can be made via bank transfer.
                 </p>
               </div>
 

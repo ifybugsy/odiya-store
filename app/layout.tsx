@@ -8,8 +8,8 @@ import { BuyerAuthProvider } from "@/lib/buyer-auth-context"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Odiya Store - Buy & Sell Online",
-  description: "Facebook-like marketplace for buying and selling items",
+  title: "Bugsy Mart - Buy & Sell Online",
+  description: "Bugsy marketplace for buying and selling items",
   generator: "v0.app",
 }
 

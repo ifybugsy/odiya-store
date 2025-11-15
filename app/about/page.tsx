@@ -26,20 +26,20 @@ export default function AboutPage() {
       <Navbar />
       <main className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-8">About Odiya Store</h1>
+          <h1 className="text-4xl font-bold mb-8">About Bugsy Mart</h1>
 
           <Card className="p-8 mb-8 space-y-6">
             <section>
               <h2 className="text-2xl font-bold mb-4">Our Story</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Odiya Store was born from the vision of <strong>Ifybugsy Digital Technologies Limited</strong>, a
+                Bugsy Mart was born from the vision of <strong>Ifybugsy Digital Technologies Limited</strong>, a
                 forward-thinking tech company dedicated to revolutionizing digital commerce in Africa. Founded by
-                <strong> Ifeanyi David Onyejiaka</strong>, an accomplished Software Engineer, Odiya Store represents a
+                <strong> Ifeanyi David Onyejiaka</strong>, an accomplished Software Engineer, Bugsy Mart represents a
                 commitment to making technology accessible and empowering small businesses to thrive in the digital
                 economy.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                The development of Odiya Store was motivated by a simple yet powerful observation: small business owners
+                The development of Bugsy Mart was motivated by a simple yet powerful observation: small business owners
                 and entrepreneurs across Nigeria lacked an easy-to-use, trust-based marketplace to reach customers and
                 scale their operations. Traditional platforms were either too complex, too expensive, or didn't cater to
                 the unique needs of Nigerian merchants. We saw an opportunity to change this narrative.
@@ -51,8 +51,8 @@ export default function AboutPage() {
               <p className="text-muted-foreground leading-relaxed">
                 At Ifybugsy Digital Technologies Limited, our mission is to make a meaningful difference in technology
                 by empowering small businesses and individuals with tools that simplify commerce, foster trust, and
-                unlock economic opportunities. Through Odiya Store, we're building a Facebook-like marketplace that
-                connects buyers and sellers across Nigeria, making online commerce accessible, transparent, and
+                unlock economic opportunities. Through Bugsy Mart, we're building a Large marketplace that
+                connects buyers and sellers across Nigeria and Africa, making online commerce accessible, transparent, and
                 beneficial for everyone.
               </p>
             </section>
@@ -61,7 +61,7 @@ export default function AboutPage() {
               <h2 className="text-2xl font-bold mb-4">What We Do</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">We provide a platform where:</p>
               <ul className="space-y-2 text-muted-foreground">
-                <li>✓ Sellers can list items in various categories for ₦500 per item</li>
+                <li>✓ Sellers can list items in various categories for ₦150 per item</li>
                 <li>✓ Buyers can discover products with infinite scroll browsing</li>
                 <li>✓ Direct communication happens between buyers and sellers</li>
                 <li>✓ We ensure quality and safety of the platform</li>
@@ -78,7 +78,7 @@ export default function AboutPage() {
               ) : (
                 <div className="space-y-3 text-muted-foreground">
                   <p>
-                    Odiya Store partners with reliable dispatch riders to ensure fast and secure delivery of items
+                    Bugsy Mart partners with reliable dispatch riders to ensure fast and secure delivery of items
                     across Nigeria.
                   </p>
                   <ul className="space-y-2">
@@ -102,7 +102,7 @@ export default function AboutPage() {
                 <div className="space-y-3 text-muted-foreground">
                   <p>
                     Our marketplace vendor program supports businesses and entrepreneurs who want to scale their
-                    operations on Odiya Store.
+                    operations on Bugsy Mart.
                   </p>
                   <ul className="space-y-2">
                     <li>✓ Premium vendor accounts with enhanced visibility</li>

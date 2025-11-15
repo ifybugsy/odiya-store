@@ -300,7 +300,8 @@ After payment, your item will be pending admin approval.`)
                     <option value="New">New</option>
                     <option value="Like New">Like New</option>
                     <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
+                    <option value="Fair">Fairly Used</option>
+                    <option value="Fair">Foreign Used</option>
                   </select>
                 </div>
               </div>
@@ -351,7 +352,7 @@ After payment, your item will be pending admin approval.`)
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently in Vercel Blob</p>
+                  <p className="text-xs text-muted-foreground mt-1">Use clear images</p>
                 </div>
 
                 {uploadProgress > 0 && (
@@ -362,7 +363,7 @@ After payment, your item will be pending admin approval.`)
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Uploading to Vercel Blob: {uploadProgress}%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Your Item is Uploading: {uploadProgress}%</p>
                   </div>
                 )}
 

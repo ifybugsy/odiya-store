@@ -122,7 +122,7 @@ export default function LoginPage() {
       console.error("[v0] Authentication error:", err)
 
       if (err.name === "AbortError") {
-        setError("Request timed out. Backend may be slow. Please try again.")
+        setError("Request timed out. Network may be slow. Please try again.")
         setDebugInfo("Timeout after 15 seconds - check if backend is running")
       } else {
         setError(err.message || "An error occurred")
@@ -143,7 +143,7 @@ export default function LoginPage() {
               {isSignUp ? "Create Account" : "Welcome Back"}
             </h1>
             <p className="text-center text-muted-foreground mt-2">
-              {isSignUp ? "Join Odiya Store today" : "Login to your account"}
+              {isSignUp ? "Join Bugsy Mart today" : "Login to your account"}
             </p>
           </div>
 
