@@ -5,21 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
-import { Search, Filter, AlertCircle } from "lucide-react"
+import { Search, Filter, AlertCircle } from 'lucide-react'
 import { apiRequest, validateApiConfig } from "@/lib/api-utils"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
+const ITEM_CONDITIONS = ["New", "Like New", "Good", "Fair", "Foreign Used"]
 
 export default function HomePage() {
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState("")
+  const [selectedCondition, setSelectedCondition] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [configWarning, setConfigWarning] = useState("")
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     const config = validateApiConfig()
@@ -35,6 +38,7 @@ export default function HomePage() {
         setCategories(data.categories || FALLBACK_CATEGORIES)
         setConfigWarning("") // Clear warning if successful
       } catch (error) {
+        console.error("[v0] Failed to load categories:", error instanceof Error ? error.message : String(error))
         setCategories(FALLBACK_CATEGORIES)
 
         if (error instanceof Error) {
@@ -46,7 +50,6 @@ export default function HomePage() {
     loadCategories()
   }, [])
 
-  // Load items
   const loadItems = useCallback(
     async (pageNum: number, append = false) => {
       setError("")
@@ -54,6 +57,7 @@ export default function HomePage() {
       try {
         let endpoint = `/items?page=${pageNum}`
         if (selectedCategory) endpoint += `&category=${selectedCategory}`
+        if (selectedCondition) endpoint += `&condition=${encodeURIComponent(selectedCondition)}`
         if (searchQuery) endpoint += `&search=${encodeURIComponent(searchQuery)}`
 
         const data = await apiRequest(endpoint)
@@ -67,7 +71,9 @@ export default function HomePage() {
         setHasMore(pageNum < data.pages)
         setConfigWarning("") // Clear warning if successful
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to load items")
+        const errorMessage = error instanceof Error ? error.message : "Failed to load items"
+        console.error("[v0] Failed to load items:", errorMessage)
+        setError(errorMessage)
         if (!append) {
           setItems([])
         }
@@ -75,16 +81,14 @@ export default function HomePage() {
         setIsLoading(false)
       }
     },
-    [selectedCategory, searchQuery],
+    [selectedCategory, selectedCondition, searchQuery],
   )
 
-  // Load initial items
   useEffect(() => {
     setPage(1)
     loadItems(1, false)
-  }, [selectedCategory, searchQuery, loadItems])
+  }, [selectedCategory, selectedCondition, searchQuery, loadItems])
 
-  // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 500 && hasMore && !isLoading) {
@@ -137,11 +141,40 @@ export default function HomePage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+            <Button 
+              variant={showFilters ? "default" : "outline"} 
+              className="flex items-center gap-2"
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="w-4 h-4" />
               Filter
             </Button>
           </div>
+          
+          {showFilters && (
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <h3 className="text-sm font-semibold mb-3">Item Condition</h3>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant={selectedCondition === "" ? "default" : "outline"}
+                  onClick={() => setSelectedCondition("")}
+                >
+                  All Conditions
+                </Button>
+                {ITEM_CONDITIONS.map((condition) => (
+                  <Button
+                    key={condition}
+                    size="sm"
+                    variant={selectedCondition === condition ? "default" : "outline"}
+                    onClick={() => setSelectedCondition(condition)}
+                  >
+                    {condition}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

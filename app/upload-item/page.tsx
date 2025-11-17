@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
-import { Upload } from 'lucide-react'
+import { Upload, Copy, Check } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -49,6 +49,7 @@ export default function UploadItemPage() {
   const [error, setError] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
   const [imageFiles, setImageFiles] = useState<ImagePreview[]>([])
+  const [copiedField, setCopiedField] = useState<string>("")
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -204,21 +205,108 @@ export default function UploadItemPage() {
       const itemData = await createRes.json()
       console.log("[upload-item] Item created successfully with permanent images:", itemData)
 
-      alert(`Item uploaded successfully! 
-
-Please pay the upload fee of ₦150 to confirm listing.
-
-Bank Account Details:
-Account Number: 1028301845
-Account Name: Ifybugsy Digital Technologies Ltd
-Bank Name: UBA
-
-Purpose: Bugsymart Upload Fee
-
-All payments reciepts should be forwarded to whatsapp 09160007661
-After payment, your item will be pending admin approval.`)
-
-      router.push("/dashboard")
+      const accountNumber = "1028301845"
+      const accountName = "Ifybugsy Digital Technologies Ltd"
+      const bankName = "UBA"
+      
+      // Create custom modal/alert instead of browser alert
+      const modal = document.createElement("div")
+      modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;"
+      
+      const content = document.createElement("div")
+      content.style.cssText = "background:white;border-radius:12px;padding:32px;max-width:500px;width:100%;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);position:relative;"
+      
+      content.innerHTML = `
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:56px;height:56px;background:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg style="width:32px;height:32px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 style="font-size:24px;font-weight:bold;margin-bottom:8px;color:#111827;">Item Uploaded Successfully!</h2>
+          <p style="color:#6b7280;font-size:14px;">Please pay the upload fee of ₦150 to confirm listing.</p>
+        </div>
+        
+        <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;">
+          <h3 style="font-weight:600;margin-bottom:16px;color:#111827;font-size:16px;">Bank Account Details</h3>
+          
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:500;">Account Number</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input readonly value="${accountNumber}" style="flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:15px;font-weight:600;color:#111827;background:white;" id="accountNumberInput" />
+              <button onclick="copyField('${accountNumber}', 'accountNumber')" style="padding:10px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;transition:background 0.2s;" id="copyAccountBtn">
+                <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="copyAccountIcon">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span id="copyAccountText">Copy</span>
+              </button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:500;">Account Name</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input readonly value="${accountName}" style="flex:1;padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:15px;font-weight:600;color:#111827;background:white;" id="accountNameInput" />
+              <button onclick="copyField('${accountName}', 'accountName')" style="padding:10px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;transition:background 0.2s;" id="copyNameBtn">
+                <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="copyNameIcon">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span id="copyNameText">Copy</span>
+              </button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:500;">Bank Name</label>
+            <input readonly value="${bankName}" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:15px;font-weight:600;color:#111827;background:white;" />
+          </div>
+          
+          <div style="margin-bottom:12px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;">
+            <p style="font-size:13px;color:#92400e;font-weight:500;">Purpose: bugsymart Upload Fee</p>
+          </div>
+          
+          <div style="padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;">
+            <p style="font-size:13px;color:#1e40af;font-weight:500;">All payments receipts should be forwarded to whatsapp 09160007661</p>
+          </div>
+        </div>
+        
+        <p style="color:#6b7280;font-size:13px;margin-bottom:24px;text-align:center;">After payment, your item will be pending admin approval.</p>
+        
+        <button onclick="closeModal()" style="width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;transition:background 0.2s;">
+          Got it, thanks!
+        </button>
+      `
+      
+      modal.appendChild(content)
+      document.body.appendChild(modal)
+      
+      // Add global functions for the modal
+      ;(window as any).copyField = (text: string, field: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById(`copy${field === 'accountNumber' ? 'Account' : 'Name'}Btn`) as HTMLButtonElement
+          const text = document.getElementById(`copy${field === 'accountNumber' ? 'Account' : 'Name'}Text`) as HTMLSpanElement
+          const icon = document.getElementById(`copy${field === 'accountNumber' ? 'Account' : 'Name'}Icon`) as SVGElement
+          
+          if (btn && text && icon) {
+            btn.style.background = "#10b981"
+            text.textContent = "Copied!"
+            icon.innerHTML = '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>'
+            
+            setTimeout(() => {
+              btn.style.background = "#3b82f6"
+              text.textContent = "Copy"
+              icon.innerHTML = '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>'
+            }, 2000)
+          }
+        })
+      }
+      
+      ;(window as any).closeModal = () => {
+        document.body.removeChild(modal)
+        delete (window as any).copyField
+        delete (window as any).closeModal
+        router.push("/dashboard")
+      }
     } catch (err: any) {
       console.error("[upload-item] Upload error:", err)
       setError(err.message)

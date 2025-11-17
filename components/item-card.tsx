@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { SaveButton } from "@/components/save-button"
 import { getUserInitials } from "@/lib/user-utils"
 import { getImageUrl, handleImageError } from "@/lib/image-utils"
@@ -87,6 +87,13 @@ export default function ItemCard({ item }: { item: any }) {
           <h3 className="font-semibold text-sm line-clamp-2">{item.title}</h3>
           <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
           <p className="text-xs text-muted-foreground">{item.location}</p>
+          {item.condition && (
+            <div className="mt-2">
+              <Badge variant="secondary" className="text-xs">
+                {item.condition}
+              </Badge>
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-2">
             {item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? (
               <img

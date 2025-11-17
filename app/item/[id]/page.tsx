@@ -3,15 +3,16 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams } from 'next/navigation'
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ShareButtons } from "@/components/share-buttons"
 import { SaveButton } from "@/components/save-button"
 import RelatedItems from "@/components/related-items"
+import Head from "next/head"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -36,6 +37,50 @@ export default function ItemPage() {
         const res = await fetch(`${API_URL}/items/${params.id}`)
         const data = await res.json()
         setItem(data)
+        
+        if (data) {
+          document.title = `${data.title} - Bugsymat.shop`
+          
+          // Update meta tags for Open Graph
+          const updateMetaTag = (property: string, content: string) => {
+            let tag = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement
+            if (!tag) {
+              tag = document.createElement("meta")
+              tag.setAttribute("property", property)
+              document.head.appendChild(tag)
+            }
+            tag.content = content
+          }
+          
+          const updateMetaName = (name: string, content: string) => {
+            let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement
+            if (!tag) {
+              tag = document.createElement("meta")
+              tag.setAttribute("name", name)
+              document.head.appendChild(tag)
+            }
+            tag.content = content
+          }
+          
+          // Open Graph tags for Facebook, WhatsApp, etc.
+          updateMetaTag("og:title", data.title)
+          updateMetaTag("og:description", data.description || `${data.title} - ${new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency: "NGN",
+          }).format(data.price)}`)
+          updateMetaTag("og:image", data.images?.[0] || "/placeholder.svg")
+          updateMetaTag("og:url", `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/item/${data._id}`)
+          updateMetaTag("og:type", "product")
+          
+          // Twitter Card tags
+          updateMetaName("twitter:card", "summary_large_image")
+          updateMetaName("twitter:title", data.title)
+          updateMetaName("twitter:description", data.description || `${data.title} - ${new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency: "NGN",
+          }).format(data.price)}`)
+          updateMetaName("twitter:image", data.images?.[0] || "/placeholder.svg")
+        }
       } catch (error) {
         console.error("Failed to load item:", error)
       } finally {
