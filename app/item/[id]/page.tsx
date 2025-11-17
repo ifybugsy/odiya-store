@@ -1,29 +1,19 @@
-"use client"
-
-import type React from "react"
 import type { Metadata } from "next"
 import { ItemDetailClient } from "@/components/item-detail-client"
-import { useState, useEffect } from "react"
-import { useParams } from 'next/navigation'
-import Navbar from "@/components/navbar"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from 'lucide-react'
-import { ShareButtons } from "@/components/share-buttons"
-import { SaveButton } from "@/components/save-button"
-import RelatedItems from "@/components/related-items"
-import Head from "next/head"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   try {
-    const res = await fetch(`${API_URL}/items/${params.id}`, { cache: "no-store" })
+    const res = await fetch(`${API_URL}/items/${params.id}`, { 
+      cache: "no-store",
+      next: { revalidate: 0 }
+    })
     
     if (!res.ok) {
       return {
         title: "Item Not Found - Bugsymart",
+        description: "The item you're looking for could not be found.",
       }
     }
 
@@ -36,19 +26,28 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
     const description = item.description 
       ? `${item.description.substring(0, 155)}...` 
-      : `${item.title} - ${formattedPrice}`
+      : `${item.title} - ${formattedPrice}. ${item.condition ? `Condition: ${item.condition}` : ""}`
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bugsymart.shop"
-    const imageUrl = item.images?.[0] || `${appUrl}/placeholder.svg`
+    
+    // Use the first image from the item, ensuring it's a full URL
+    let imageUrl = "/placeholder.svg"
+    if (item.images && item.images.length > 0) {
+      const firstImage = item.images[0]
+      // If image is already a full URL, use it; otherwise construct the full URL
+      imageUrl = firstImage.startsWith("http") 
+        ? firstImage 
+        : `${appUrl}${firstImage}`
+    }
 
     return {
-      title: `${item.title} - Bugsymart`,
+      title: `${item.title} - ${formattedPrice} | Bugsymart`,
       description: description,
       openGraph: {
-        title: item.title,
+        title: `${item.title} - ${formattedPrice}`,
         description: description,
         url: `${appUrl}/item/${item._id}`,
-        siteName: "Bugsymart",
+        siteName: "Bugsymart - Buy & Sell Online",
         images: [
           {
             url: imageUrl,
@@ -58,18 +57,23 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
           },
         ],
         type: "website",
+        locale: "en_NG",
       },
       twitter: {
         card: "summary_large_image",
-        title: item.title,
+        title: `${item.title} - ${formattedPrice}`,
         description: description,
         images: [imageUrl],
+      },
+      alternates: {
+        canonical: `${appUrl}/item/${item._id}`,
       },
     }
   } catch (error) {
     console.error("Failed to generate metadata:", error)
     return {
-      title: "Bugsymart - Buy and Sell",
+      title: "Bugsymart - Buy & Sell Online",
+      description: "Discover great deals on quality items at Bugsymart marketplace",
     }
   }
 }
