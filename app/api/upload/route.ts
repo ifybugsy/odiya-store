@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob"
 import { type NextRequest, NextResponse } from "next/server"
 
-export const maxDuration = 300 // 5 minutes for large file uploads
+export const maxDuration = 300
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/jpg"]
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed." },
@@ -32,10 +31,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size (500MB limit)
-    const maxSize = 500 * 1024 * 1024 // 500MB
+    // Validate file size (10MB limit for profile images)
+    const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File is too large. Maximum size is 500MB." }, { status: 413 })
+      return NextResponse.json({ error: "File is too large. Maximum size is 10MB." }, { status: 413 })
+    }
+
+    // Check if file is actually an image by reading first bytes
+    const buffer = await file.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    
+    // Simple image format validation
+    const isJPEG = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF
+    const isPNG = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47
+    const isGIF = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46
+    const isWEBP = bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+
+    if (!isJPEG && !isPNG && !isGIF && !isWEBP) {
+      return NextResponse.json(
+        { error: "File content does not match image format. Please upload a valid image." },
+        { status: 400 },
+      )
     }
 
     console.log("[upload] Processing file:", {
@@ -44,10 +60,12 @@ export async function POST(request: NextRequest) {
       type: file.type,
     })
 
-    const blob = await put(file.name, file, {
+    // Create blob from buffer
+    const blob = await put(file.name, buffer, {
       access: "public",
-      addRandomSuffix: true, // Prevents filename conflicts
-      token: token, // Explicitly pass the token
+      addRandomSuffix: true,
+      token: token,
+      contentType: file.type,
     })
 
     console.log("[upload] File uploaded to Vercel Blob:", {

@@ -83,6 +83,50 @@ router.get("/my-items", async (req, res) => {
   }
 })
 
+router.post("/:userId/rate", async (req, res) => {
+  try {
+    const { rating } = req.body
+    const targetUserId = req.params.userId
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" })
+    }
+
+    // Prevent users from rating themselves
+    if (targetUserId === req.user.id) {
+      return res.status(400).json({ error: "You cannot rate yourself" })
+    }
+
+    const targetUser = await User.findById(targetUserId)
+
+    if (!targetUser) {
+      return res.status(404).json({ error: "User not found" })
+    }
+
+    // Update rating (simple average calculation)
+    const currentRating = targetUser.rating || 0
+    const currentRatingCount = targetUser.ratingCount || 0
+    
+    const newRatingCount = currentRatingCount + 1
+    const newAverageRating = ((currentRating * currentRatingCount) + rating) / newRatingCount
+
+    targetUser.rating = newAverageRating
+    targetUser.ratingCount = newRatingCount
+    await targetUser.save()
+
+    console.log(`[v0] User ${req.user.id} rated user ${targetUserId}: ${rating} stars (new avg: ${newAverageRating.toFixed(2)})`)
+
+    res.json({
+      message: "Rating submitted successfully",
+      averageRating: newAverageRating,
+      totalRatings: newRatingCount,
+    })
+  } catch (error) {
+    console.error("[v0] Rating submission error:", error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 router.put("/promote-admin", async (req, res) => {
   try {
     const { targetEmail, setupToken } = req.body

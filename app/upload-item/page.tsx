@@ -441,7 +441,7 @@ export default function UploadItemPage() {
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently in Vercel Blob</p>
+                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently on our database</p>
                 </div>
 
                 {uploadProgress > 0 && (
@@ -452,7 +452,7 @@ export default function UploadItemPage() {
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Uploading to Vercel Blob: {uploadProgress}%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Uploading... {uploadProgress}%</p>
                   </div>
                 )}
 
