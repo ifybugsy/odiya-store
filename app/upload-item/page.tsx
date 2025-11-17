@@ -213,8 +213,9 @@ Account Number: 1028301845
 Account Name: Ifybugsy Digital Technologies Ltd
 Bank Name: UBA
 
-Purpose: Odiya Store Upload Fee
+Purpose: Bugsymart Upload Fee
 
+All payments reciepts should be forwarded to whatsapp 09160007661
 After payment, your item will be pending admin approval.`)
 
       router.push("/dashboard")
