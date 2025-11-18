@@ -124,11 +124,10 @@ export default function HomePage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800">API Configuration Issue</p>
+                <p className="text-sm font-medium text-yellow-800">Network issue</p>
                 <p className="text-xs text-yellow-700 mt-1">{configWarning}</p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  Please set the <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_API_URL</code> environment
-                  variable to your backend API URL.
+                  please be patient <code className="bg-yellow-100 px-1 rounded">Loading</code> try refreshing
                 </p>
               </div>
             </div>
@@ -220,7 +219,7 @@ export default function HomePage() {
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium">Error loading items</p>
+                <p className="font-medium">Error loading items might be your network, try refreshing</p>
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>

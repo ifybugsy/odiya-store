@@ -19,12 +19,11 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex gap-4 mb-6">
               <a
-                href="https://facebook.com"
+                href="https://web.facebook.com/profile.php?id=61583801342905"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/10 hover:bg-white/20 transition rounded-full p-2.5"
-                aria-label="Facebook"
-              >
+                aria-label="Facebook"              >
                 <Facebook className="w-4 h-4" />
               </a>
               <a
@@ -35,7 +34,7 @@ export default function Footer() {
                 aria-label="Twitter"
               >
                 <Twitter className="w-4 h-4" />
-              </a>
+              </a> 
               <a
                 href="https://instagram.com"
                 target="_blank"
