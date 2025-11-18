@@ -19,17 +19,24 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
     const fetchRelatedItems = async () => {
       try {
         setLoading(true)
+        console.log("[v0] Fetching related items for category:", category)
         const data = await apiRequest(`/items?category=${encodeURIComponent(category)}&limit=${limit + 1}`)
+        console.log("[v0] Related items data received:", data)
 
         const itemsList = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
 
         // Filter out current item and sold items, then limit results
         const filtered = itemsList
           .filter((item: any) => {
-            return item?._id !== currentItemId && !item?.isSold
+            if (!item || !item._id) {
+              console.warn("[v0] Invalid item in related items:", item)
+              return false
+            }
+            return item._id !== currentItemId && !item?.isSold
           })
           .slice(0, limit)
 
+        console.log("[v0] Filtered related items count:", filtered.length)
         setItems(filtered)
         setError("")
       } catch (err) {
@@ -43,6 +50,9 @@ export default function RelatedItems({ category, currentItemId, limit = 6 }: Rel
 
     if (category) {
       fetchRelatedItems()
+    } else {
+      console.warn("[v0] No category provided for related items")
+      setLoading(false)
     }
   }, [category, currentItemId, limit])
 

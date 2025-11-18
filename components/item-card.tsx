@@ -14,10 +14,25 @@ import { getImageUrl, handleImageError } from "@/lib/image-utils"
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  const formattedPrice = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-  }).format(item.price)
+  console.log("[v0] ItemCard rendering with item:", {
+    id: item?._id,
+    title: item?.title,
+    hasId: !!item?._id,
+    idType: typeof item?._id
+  })
+
+  if (!item || !item._id) {
+    console.error("[v0] ItemCard received item without _id:", item)
+    return null
+  }
+
+  const price = item?.price !== undefined && item.price !== null ? Number(item.price) : 0
+  const formattedPrice = !isNaN(price) && price > 0
+    ? new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+      }).format(price)
+    : "₦0"
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -33,6 +48,11 @@ export default function ItemCard({ item }: { item: any }) {
 
   const hasMultipleImages = item.images && item.images.length > 1
   const currentImage = getImageUrl(item.images?.[currentImageIndex])
+  
+  const sellerFirstName = item.sellerId?.firstName || "Unknown"
+  const sellerLastName = item.sellerId?.lastName || "Seller"
+  const sellerRating = item.sellerId?.rating || 0
+  const sellerProfileImage = item.sellerId?.profileImage
 
   return (
     <Link href={`/item/${item._id}`}>
@@ -81,12 +101,12 @@ export default function ItemCard({ item }: { item: any }) {
             </>
           )}
 
-          <Badge className="absolute top-2 right-2 bg-primary">{item.category}</Badge>
+          <Badge className="absolute top-2 right-2 bg-primary">{item.category || "General"}</Badge>
         </div>
         <div className="p-3">
-          <h3 className="font-semibold text-sm line-clamp-2">{item.title}</h3>
+          <h3 className="font-semibold text-sm line-clamp-2">{item.title || "Untitled Item"}</h3>
           <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
-          <p className="text-xs text-muted-foreground">{item.location}</p>
+          <p className="text-xs text-muted-foreground">{item.location || "Location not specified"}</p>
           {item.condition && (
             <div className="mt-2">
               <Badge variant="secondary" className="text-xs">
@@ -95,10 +115,10 @@ export default function ItemCard({ item }: { item: any }) {
             </div>
           )}
           <div className="flex items-center gap-2 mt-2">
-            {item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? (
+            {sellerProfileImage && sellerProfileImage.trim() ? (
               <img
-                src={getImageUrl(item.sellerId.profileImage) || "/placeholder.svg"}
-                alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
+                src={getImageUrl(sellerProfileImage) || "/placeholder.svg"}
+                alt={`${sellerFirstName} ${sellerLastName}`}
                 className="w-6 h-6 rounded-full object-cover"
                 onError={handleImageError}
               />
@@ -106,21 +126,21 @@ export default function ItemCard({ item }: { item: any }) {
             <div
               data-fallback
               className={`w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground ${
-                item.sellerId?.profileImage && item.sellerId.profileImage.trim() ? "hidden" : ""
+                sellerProfileImage && sellerProfileImage.trim() ? "hidden" : ""
               }`}
             >
-              {getUserInitials(item.sellerId?.firstName, item.sellerId?.lastName)}
+              {getUserInitials(sellerFirstName, sellerLastName)}
             </div>
             <p className="text-xs truncate flex-1">
-              {item.sellerId?.firstName} {item.sellerId?.lastName}
+              {sellerFirstName} {sellerLastName}
             </p>
-            {item.sellerId?.rating > 0 && (
+            {sellerRating > 0 && (
               <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`w-3 h-3 ${
-                      i < Math.floor(item.sellerId?.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      i < Math.floor(sellerRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                     }`}
                   />
                 ))}

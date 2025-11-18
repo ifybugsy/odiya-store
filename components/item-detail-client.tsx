@@ -37,11 +37,75 @@ export function ItemDetailClient({ id }: { id: string }) {
   useEffect(() => {
     const loadItem = async () => {
       try {
-        const res = await fetch(`${API_URL}/items/${id}`)
+        console.log("[v0] Loading item with id:", id)
+        console.log("[v0] ID type:", typeof id)
+        console.log("[v0] ID length:", id?.length)
+        
+        if (!id || typeof id !== 'string' || id.trim() === '') {
+          console.error("[v0] Invalid item ID: empty or not a string")
+          throw new Error("Invalid item ID")
+        }
+
+        const trimmedId = id.trim()
+        
+        const isValidObjectId = /^[a-f\d]{24}$/i.test(trimmedId)
+        if (!isValidObjectId) {
+          console.error("[v0] Invalid ObjectId format. ID must be 24 hex characters:", trimmedId)
+          throw new Error(`Invalid item ID format. Please check the URL.`)
+        }
+
+        console.log("[v0] API URL:", API_URL)
+        console.log("[v0] Full request URL:", `${API_URL}/items/${trimmedId}`)
+        
+        const res = await fetch(`${API_URL}/items/${trimmedId}`)
+        
+        console.log("[v0] Response status:", res.status)
+        console.log("[v0] Response ok:", res.ok)
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
+          console.error("[v0] Failed to fetch item, status:", res.status, "error:", errorData)
+          throw new Error(`Failed to fetch item: ${res.status} - ${errorData.error || "Unknown error"}`)
+        }
+        
         const data = await res.json()
+        console.log("[v0] Item data received:", {
+          id: data._id,
+          title: data.title,
+          price: data.price,
+          hasSeller: !!data.sellerId
+        })
+        
+        if (!data || typeof data !== 'object') {
+          console.error("[v0] Invalid item data structure")
+          throw new Error("Invalid item data")
+        }
+        
+        if (data.price !== undefined && data.price !== null) {
+          data.price = Number(data.price)
+          if (isNaN(data.price)) {
+            console.error("[v0] Invalid price value:", data.price)
+            data.price = 0
+          }
+        } else {
+          console.warn("[v0] Price is missing, setting to 0")
+          data.price = 0
+        }
+        
+        if (!data.sellerId || typeof data.sellerId !== 'object') {
+          console.error("[v0] Seller data not populated:", data.sellerId)
+        } else {
+          console.log("[v0] Seller data:", {
+            id: data.sellerId._id,
+            name: `${data.sellerId.firstName} ${data.sellerId.lastName}`,
+            rating: data.sellerId.rating
+          })
+        }
+        
         setItem(data)
       } catch (error) {
-        console.error("Failed to load item:", error)
+        console.error("[v0] Failed to load item:", error)
+        setItem(null)
       } finally {
         setLoading(false)
       }
@@ -55,8 +119,15 @@ export function ItemDetailClient({ id }: { id: string }) {
       return
     }
 
+    if (!item || !item.sellerId || !item.sellerId._id) {
+      console.error("[v0] Cannot submit rating: seller information is missing")
+      alert("Unable to rate seller. Seller information is not available.")
+      return
+    }
+
     setRatingLoading(true)
     try {
+      console.log("[v0] Submitting rating:", rating, "for seller:", item.sellerId._id)
       const res = await fetch(`${API_URL}/users/${item.sellerId._id}/rate`, {
         method: "POST",
         headers: {
@@ -73,7 +144,6 @@ export function ItemDetailClient({ id }: { id: string }) {
 
       const data = await res.json()
       
-      // Update item with new seller rating
       setItem((prev: any) => ({
         ...prev,
         sellerId: {
@@ -183,13 +253,22 @@ export function ItemDetailClient({ id }: { id: string }) {
     )
   }
 
-  const formattedPrice = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-  }).format(item.price)
+  const formattedPrice = item.price && !isNaN(item.price) 
+    ? new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+      }).format(item.price)
+    : "₦0"
 
   const hasMultipleImages = item.images && item.images.length > 1
   const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
+  
+  const sellerFirstName = item.sellerId?.firstName || "Unknown"
+  const sellerLastName = item.sellerId?.lastName || "Seller"
+  const sellerPhone = item.sellerId?.phone || null
+  const sellerRating = item.sellerId?.rating || 0
+  const sellerProfileImage = item.sellerId?.profileImage || null
+  const sellerId = item.sellerId?._id || null
 
   return (
     <>
@@ -266,11 +345,10 @@ export function ItemDetailClient({ id }: { id: string }) {
                   <p className="text-3xl font-bold text-primary mb-2">{formattedPrice}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4" />
-                    {item.location}
+                    {item.location || "Location not specified"}
                   </div>
                 </div>
 
-                {/* Share & Save Buttons */}
                 <div className="border-t border-border pt-4">
                   <p className="text-sm font-semibold mb-3">Share & Save</p>
                   <div className="space-y-2">
@@ -286,21 +364,20 @@ export function ItemDetailClient({ id }: { id: string }) {
 
                 <div className="border-t border-border pt-4">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Condition: <span className="font-semibold">{item.condition}</span>
+                    Condition: <span className="font-semibold">{item.condition || "Not specified"}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Views: <span className="font-semibold">{item.views}</span>
+                    Views: <span className="font-semibold">{item.views || 0}</span>
                   </p>
                 </div>
 
-                {/* Seller Info */}
                 <div className="border-t border-border pt-4">
                   <p className="text-sm font-semibold mb-3">Seller Information</p>
                   <div className="flex items-center gap-3 mb-4">
-                    {item.sellerId?.profileImage ? (
+                    {sellerProfileImage ? (
                       <img
-                        src={item.sellerId.profileImage || "/placeholder.svg"}
-                        alt={`${item.sellerId?.firstName} ${item.sellerId?.lastName}`}
+                        src={sellerProfileImage || "/placeholder.svg"}
+                        alt={`${sellerFirstName} ${sellerLastName}`}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
                           e.currentTarget.src = "/placeholder.svg"
@@ -308,52 +385,52 @@ export function ItemDetailClient({ id }: { id: string }) {
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
-                        {item.sellerId?.firstName[0]}
-                        {item.sellerId?.lastName[0]}
+                        {sellerFirstName[0]}
+                        {sellerLastName[0]}
                       </div>
                     )}
                     <div>
                       <p className="font-semibold text-sm">
-                        {item.sellerId?.firstName} {item.sellerId?.lastName}
+                        {sellerFirstName} {sellerLastName}
                       </p>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-3 h-3 ${i < Math.floor(item.sellerId?.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                            className={`w-3 h-3 ${i < Math.floor(sellerRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                           />
                         ))}
                         <span className="text-xs text-muted-foreground ml-1">
-                          ({item.sellerId?.rating?.toFixed(1) || "0.0"})
+                          ({sellerRating.toFixed(1)})
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {user && user.id !== item.sellerId?._id && (
+                  {user && sellerId && user.id !== sellerId && (
                     <div className="bg-muted/50 rounded-lg p-3 mb-4">
                       <p className="text-xs font-medium mb-2">Rate this seller</p>
                       <InteractiveStarRating
                         onSubmit={handleRatingSubmit}
                         isLoading={ratingLoading}
                         currentRating={0}
-                        sellerId={item.sellerId?._id}
+                        sellerId={sellerId}
                         itemId={item._id}
                       />
                     </div>
                   )}
 
-                  {item.sellerId?.phone && (
+                  {sellerPhone && (
                     <div className="bg-blue-50 rounded p-3 mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Phone className="w-4 h-4 text-blue-600" />
                         <p className="text-xs font-medium text-blue-600">Contact Seller</p>
                       </div>
                       <a
-                        href={`tel:${item.sellerId.phone}`}
+                        href={`tel:${sellerPhone}`}
                         className="text-sm font-semibold text-blue-700 hover:underline"
                       >
-                        {item.sellerId.phone}
+                        {sellerPhone}
                       </a>
                     </div>
                   )}
@@ -438,15 +515,16 @@ export function ItemDetailClient({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* Description */}
           <div className="mt-8 bg-white rounded-lg p-6 border border-border">
             <h2 className="text-xl font-bold mb-4">Description</h2>
-            <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+            <p className="text-muted-foreground whitespace-pre-wrap">{item.description || "No description available"}</p>
           </div>
 
-          <div className="mt-12">
-            <RelatedItems category={item.category} currentItemId={item._id} limit={6} />
-          </div>
+          {item.category && (
+            <div className="mt-12">
+              <RelatedItems category={item.category} currentItemId={item._id} limit={6} />
+            </div>
+          )}
         </div>
       </main>
     </>

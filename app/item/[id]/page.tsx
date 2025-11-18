@@ -3,9 +3,11 @@ import { ItemDetailClient } from "@/components/item-detail-client"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  
   try {
-    const res = await fetch(`${API_URL}/items/${params.id}`, { 
+    const res = await fetch(`${API_URL}/items/${id}`, { 
       cache: "no-store",
       next: { revalidate: 0 }
     })
@@ -78,6 +80,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default function ItemPage({ params }: { params: { id: string } }) {
-  return <ItemDetailClient id={params.id} />
+export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  
+  return <ItemDetailClient id={id} />
 }

@@ -1,6 +1,7 @@
 import express from "express"
 import Item from "../models/Item.js"
 import { authenticateToken, isSeller } from "../middleware/auth.js"
+import mongoose from "mongoose"
 
 const router = express.Router()
 
@@ -11,6 +12,7 @@ router.get("/", async (req, res) => {
     const limit = 20
     const category = req.query.category
     const search = req.query.search
+    const condition = req.query.condition
 
     const filter = { isApproved: true, isSold: false }
 
@@ -18,17 +20,23 @@ router.get("/", async (req, res) => {
       filter.category = category
     }
 
+    if (condition) {
+      filter.condition = condition
+    }
+
     if (search) {
       filter.$or = [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }]
     }
 
     const items = await Item.find(filter)
-      .populate("sellerId", "firstName lastName phone profileImage rating")
+      .populate("sellerId", "firstName lastName phone profileImage rating ratingCount")
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit)
 
     const total = await Item.countDocuments(filter)
+
+    console.log(`[Backend] Fetched ${items.length} items, first item ID:`, items[0]?._id)
 
     res.json({
       items,
@@ -37,6 +45,7 @@ router.get("/", async (req, res) => {
       pages: Math.ceil(total / limit),
     })
   } catch (error) {
+    console.error("[Backend] Error fetching items:", error.message)
     res.status(500).json({ error: error.message })
   }
 })
@@ -61,17 +70,46 @@ router.get("/categories", (req, res) => {
 // Get single item
 router.get("/:id", async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true }).populate(
-      "sellerId",
-      "firstName lastName phone email profileImage rating businessName",
-    )
+    const itemId = req.params.id
+    console.log("[Backend] Fetching item with ID:", itemId)
+    console.log("[Backend] ID type:", typeof itemId)
+    console.log("[Backend] ID length:", itemId.length)
+    
+    const isValidObjectId = /^[a-f\d]{24}$/i.test(itemId)
+    if (!isValidObjectId) {
+      console.log("[Backend] Invalid ObjectId format:", itemId)
+      return res.status(404).json({ error: "Invalid item ID format" })
+    }
+
+    const item = await Item.findByIdAndUpdate(
+      itemId,
+      { $inc: { views: 1 } },
+      { new: true }
+    ).populate("sellerId", "firstName lastName phone email profileImage rating ratingCount businessName")
 
     if (!item) {
+      console.log("[Backend] Item not found with ID:", itemId)
       return res.status(404).json({ error: "Item not found" })
     }
 
+    if (item.price !== undefined && item.price !== null) {
+      item.price = Number(item.price)
+      if (isNaN(item.price)) {
+        console.warn("[Backend] Invalid price for item:", item._id)
+        item.price = 0
+      }
+    } else {
+      item.price = 0
+    }
+
+    console.log("[Backend] Item found successfully:", item._id)
     res.json(item)
   } catch (error) {
+    console.error("[Backend] Error fetching item:", error.message)
+    console.error("[Backend] Error stack:", error.stack)
+    if (error.name === "CastError") {
+      return res.status(404).json({ error: "Invalid item ID format" })
+    }
     res.status(500).json({ error: error.message })
   }
 })
