@@ -3,12 +3,12 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "lucide-react"
 import { ShareButtons } from "@/components/share-buttons"
 import { SaveButton } from "@/components/save-button"
 import RelatedItems from "@/components/related-items"
@@ -40,14 +40,14 @@ export function ItemDetailClient({ id }: { id: string }) {
         console.log("[v0] Loading item with id:", id)
         console.log("[v0] ID type:", typeof id)
         console.log("[v0] ID length:", id?.length)
-        
-        if (!id || typeof id !== 'string' || id.trim() === '') {
+
+        if (!id || typeof id !== "string" || id.trim() === "") {
           console.error("[v0] Invalid item ID: empty or not a string")
           throw new Error("Invalid item ID")
         }
 
         const trimmedId = id.trim()
-        
+
         const isValidObjectId = /^[a-f\d]{24}$/i.test(trimmedId)
         if (!isValidObjectId) {
           console.error("[v0] Invalid ObjectId format. ID must be 24 hex characters:", trimmedId)
@@ -56,31 +56,31 @@ export function ItemDetailClient({ id }: { id: string }) {
 
         console.log("[v0] API URL:", API_URL)
         console.log("[v0] Full request URL:", `${API_URL}/items/${trimmedId}`)
-        
+
         const res = await fetch(`${API_URL}/items/${trimmedId}`)
-        
+
         console.log("[v0] Response status:", res.status)
         console.log("[v0] Response ok:", res.ok)
-        
+
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
           console.error("[v0] Failed to fetch item, status:", res.status, "error:", errorData)
           throw new Error(`Failed to fetch item: ${res.status} - ${errorData.error || "Unknown error"}`)
         }
-        
+
         const data = await res.json()
         console.log("[v0] Item data received:", {
           id: data._id,
           title: data.title,
           price: data.price,
-          hasSeller: !!data.sellerId
+          hasSeller: !!data.sellerId,
         })
-        
-        if (!data || typeof data !== 'object') {
+
+        if (!data || typeof data !== "object") {
           console.error("[v0] Invalid item data structure")
           throw new Error("Invalid item data")
         }
-        
+
         if (data.price !== undefined && data.price !== null) {
           data.price = Number(data.price)
           if (isNaN(data.price)) {
@@ -91,17 +91,17 @@ export function ItemDetailClient({ id }: { id: string }) {
           console.warn("[v0] Price is missing, setting to 0")
           data.price = 0
         }
-        
-        if (!data.sellerId || typeof data.sellerId !== 'object') {
+
+        if (!data.sellerId || typeof data.sellerId !== "object") {
           console.error("[v0] Seller data not populated:", data.sellerId)
         } else {
           console.log("[v0] Seller data:", {
             id: data.sellerId._id,
             name: `${data.sellerId.firstName} ${data.sellerId.lastName}`,
-            rating: data.sellerId.rating
+            rating: data.sellerId.rating,
           })
         }
-        
+
         setItem(data)
       } catch (error) {
         console.error("[v0] Failed to load item:", error)
@@ -143,7 +143,7 @@ export function ItemDetailClient({ id }: { id: string }) {
       }
 
       const data = await res.json()
-      
+
       setItem((prev: any) => ({
         ...prev,
         sellerId: {
@@ -191,7 +191,7 @@ export function ItemDetailClient({ id }: { id: string }) {
 
       const contentType = res.headers.get("content-type")
       let data
-      
+
       if (contentType && contentType.includes("application/json")) {
         data = await res.json()
       } else {
@@ -231,6 +231,38 @@ export function ItemDetailClient({ id }: { id: string }) {
     }
   }
 
+  const handlePhoneClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    try {
+      const res = await fetch(`${API_URL}/users/${item.sellerId._id}/track-contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        console.log("[v0] Contact tracked successfully:", data.contactCount)
+
+        // Update the item data with new contact count
+        setItem((prevItem: any) => ({
+          ...prevItem,
+          sellerId: {
+            ...prevItem.sellerId,
+            contactCount: data.contactCount,
+          },
+        }))
+      }
+    } catch (error) {
+      console.error("[v0] Failed to track contact:", error)
+    }
+
+    // Still allow the phone call to proceed
+    window.location.href = `tel:${sellerPhone}`
+  }
+
   if (loading) {
     return (
       <>
@@ -253,16 +285,17 @@ export function ItemDetailClient({ id }: { id: string }) {
     )
   }
 
-  const formattedPrice = item.price && !isNaN(item.price) 
-    ? new Intl.NumberFormat("en-NG", {
-        style: "currency",
-        currency: "NGN",
-      }).format(item.price)
-    : "₦0"
+  const formattedPrice =
+    item.price && !isNaN(item.price)
+      ? new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency: "NGN",
+        }).format(item.price)
+      : "₦0"
 
   const hasMultipleImages = item.images && item.images.length > 1
   const currentImage = item.images?.[currentImageIndex]?.trim() || "/placeholder.svg"
-  
+
   const sellerFirstName = item.sellerId?.firstName || "Unknown"
   const sellerLastName = item.sellerId?.lastName || "Seller"
   const sellerPhone = item.sellerId?.phone || null
@@ -400,9 +433,7 @@ export function ItemDetailClient({ id }: { id: string }) {
                             className={`w-3 h-3 ${i < Math.floor(sellerRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                           />
                         ))}
-                        <span className="text-xs text-muted-foreground ml-1">
-                          ({sellerRating.toFixed(1)})
-                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">({sellerRating.toFixed(1)})</span>
                       </div>
                     </div>
                   </div>
@@ -429,6 +460,7 @@ export function ItemDetailClient({ id }: { id: string }) {
                       <a
                         href={`tel:${sellerPhone}`}
                         className="text-sm font-semibold text-blue-700 hover:underline"
+                        onClick={handlePhoneClick}
                       >
                         {sellerPhone}
                       </a>
@@ -517,7 +549,9 @@ export function ItemDetailClient({ id }: { id: string }) {
 
           <div className="mt-8 bg-white rounded-lg p-6 border border-border">
             <h2 className="text-xl font-bold mb-4">Description</h2>
-            <p className="text-muted-foreground whitespace-pre-wrap">{item.description || "No description available"}</p>
+            <p className="text-muted-foreground whitespace-pre-wrap">
+              {item.description || "No description available"}
+            </p>
           </div>
 
           {item.category && (

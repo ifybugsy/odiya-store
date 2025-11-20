@@ -6,14 +6,17 @@ import Link from "next/link"
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star, Phone } from "lucide-react"
 import { SaveButton } from "@/components/save-button"
 import { getUserInitials } from "@/lib/user-utils"
 import { getImageUrl, handleImageError } from "@/lib/image-utils"
 import { SellerBadgeComponent } from "@/components/seller-badge"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [contactCount, setContactCount] = useState(item.sellerId?.contactCount || 0)
 
   console.log("[v0] ItemCard rendering with item:", {
     id: item?._id,
@@ -48,6 +51,28 @@ export default function ItemCard({ item }: { item: any }) {
     setCurrentImageIndex((prev) => (prev === (item.images?.length || 1) - 1 ? 0 : prev + 1))
   }
 
+  const handlePhoneClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    try {
+      const res = await fetch(`${API_URL}/users/${item.sellerId?._id}/track-contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setContactCount(data.contactCount)
+        console.log("[v0] Contact tracked. New count:", data.contactCount)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to track contact:", error)
+    }
+  }
+
   const hasMultipleImages = item.images && item.images.length > 1
   const currentImage = getImageUrl(item.images?.[currentImageIndex])
 
@@ -55,7 +80,6 @@ export default function ItemCard({ item }: { item: any }) {
   const sellerLastName = item.sellerId?.lastName || "Seller"
   const sellerRating = item.sellerId?.rating || 0
   const sellerProfileImage = item.sellerId?.profileImage
-  const sellerContactCount = item.sellerId?.contactCount || 0
   const badge = item.sellerId ? <SellerBadgeComponent seller={item.sellerId} size="sm" /> : null
 
   return (
@@ -152,10 +176,13 @@ export default function ItemCard({ item }: { item: any }) {
               </div>
             )}
           </div>
-          {sellerContactCount > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              📞 {sellerContactCount} contact{sellerContactCount !== 1 ? "s" : ""}
-            </p>
+          {contactCount > 0 && (
+            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+              <Phone className="w-3 h-3" />
+              <span>
+                {contactCount} contact{contactCount !== 1 ? "s" : ""}
+              </span>
+            </div>
           )}
         </div>
       </Card>

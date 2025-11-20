@@ -68,9 +68,23 @@ export default function SellerProfilePage() {
 
   const handlePhoneClick = async () => {
     try {
-      await fetch(`${API_URL}/sellers/${params.id}/track-contact`, {
+      const res = await fetch(`${API_URL}/users/${params.id}/track-contact`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
+
+      if (res.ok) {
+        const data = await res.json()
+        console.log("[v0] Contact tracked successfully:", data.contactCount)
+
+        // Update the seller state with new contact count
+        setSeller((prevSeller: any) => ({
+          ...prevSeller,
+          contactCount: data.contactCount,
+        }))
+      }
     } catch (error) {
       console.error("[v0] Failed to track contact:", error)
     }
