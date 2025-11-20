@@ -57,6 +57,15 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  contactCount: {
+    type: Number,
+    default: 0,
+  },
+  itemsSold: {
+    type: Number,
+    default: 0,
+  },
+  lastListingDate: Date,
   createdAt: {
     type: Date,
     default: Date.now,

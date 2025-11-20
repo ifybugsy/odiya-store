@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Star, MapPin, MessageCircle, Phone, Mail } from "lucide-react"
 import Link from "next/link"
+import { SellerBadgeComponent } from "@/components/seller-badge"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -65,6 +66,16 @@ export default function SellerProfilePage() {
   const averageRating = Math.round(seller.rating || 0)
   const totalReviews = seller.totalReviews || 0
 
+  const handlePhoneClick = async () => {
+    try {
+      await fetch(`${API_URL}/sellers/${params.id}/track-contact`, {
+        method: "POST",
+      })
+    } catch (error) {
+      console.error("[v0] Failed to track contact:", error)
+    }
+  }
+
   return (
     <>
       <Navbar />
@@ -91,9 +102,12 @@ export default function SellerProfilePage() {
 
               {/* Profile Info */}
               <div className="flex-1">
-                <h1 className="text-4xl font-bold mb-2">
-                  {seller.firstName} {seller.lastName}
-                </h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-4xl font-bold">
+                    {seller.firstName} {seller.lastName}
+                  </h1>
+                  <SellerBadgeComponent seller={seller} size="md" />
+                </div>
 
                 {/* Rating */}
                 <div className="flex items-center gap-3 mb-4">
@@ -118,12 +132,16 @@ export default function SellerProfilePage() {
                 {/* Bio */}
                 {seller.bio && <p className="text-foreground mb-6 max-w-2xl">{seller.bio}</p>}
 
-                {/* Contact Info */}
+                {/* Contact Info with tracking */}
                 <div className="space-y-3 mb-6">
                   {seller.phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="w-5 h-5 text-primary" />
-                      <a href={`tel:${seller.phone}`} className="font-semibold hover:underline">
+                      <a
+                        href={`tel:${seller.phone}`}
+                        onClick={handlePhoneClick}
+                        className="font-semibold hover:underline"
+                      >
                         {seller.phone}
                       </a>
                     </div>
@@ -154,15 +172,19 @@ export default function SellerProfilePage() {
             </div>
           </Card>
 
-          {/* Seller Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Seller Stats - Updated */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card className="p-6 text-center">
               <p className="text-muted-foreground text-sm">Total Items Listed</p>
-              <p className="text-3xl font-bold text-primary">{seller.totalItems || 0}</p>
+              <p className="text-3xl font-bold text-primary">{seller.totalItemsListed || 0}</p>
             </Card>
             <Card className="p-6 text-center">
               <p className="text-muted-foreground text-sm">Items Sold</p>
               <p className="text-3xl font-bold text-green-600">{seller.itemsSold || 0}</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Contacts Made</p>
+              <p className="text-3xl font-bold text-blue-600">{seller.contactCount || 0}</p>
             </Card>
             <Card className="p-6 text-center">
               <p className="text-muted-foreground text-sm">Member Since</p>

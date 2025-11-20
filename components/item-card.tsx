@@ -6,10 +6,11 @@ import Link from "next/link"
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Star } from "lucide-react"
 import { SaveButton } from "@/components/save-button"
 import { getUserInitials } from "@/lib/user-utils"
 import { getImageUrl, handleImageError } from "@/lib/image-utils"
+import { SellerBadgeComponent } from "@/components/seller-badge"
 
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -18,7 +19,7 @@ export default function ItemCard({ item }: { item: any }) {
     id: item?._id,
     title: item?.title,
     hasId: !!item?._id,
-    idType: typeof item?._id
+    idType: typeof item?._id,
   })
 
   if (!item || !item._id) {
@@ -27,12 +28,13 @@ export default function ItemCard({ item }: { item: any }) {
   }
 
   const price = item?.price !== undefined && item.price !== null ? Number(item.price) : 0
-  const formattedPrice = !isNaN(price) && price > 0
-    ? new Intl.NumberFormat("en-NG", {
-        style: "currency",
-        currency: "NGN",
-      }).format(price)
-    : "₦0"
+  const formattedPrice =
+    !isNaN(price) && price > 0
+      ? new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency: "NGN",
+        }).format(price)
+      : "₦0"
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -48,11 +50,13 @@ export default function ItemCard({ item }: { item: any }) {
 
   const hasMultipleImages = item.images && item.images.length > 1
   const currentImage = getImageUrl(item.images?.[currentImageIndex])
-  
+
   const sellerFirstName = item.sellerId?.firstName || "Unknown"
   const sellerLastName = item.sellerId?.lastName || "Seller"
   const sellerRating = item.sellerId?.rating || 0
   const sellerProfileImage = item.sellerId?.profileImage
+  const sellerContactCount = item.sellerId?.contactCount || 0
+  const badge = item.sellerId ? <SellerBadgeComponent seller={item.sellerId} size="sm" /> : null
 
   return (
     <Link href={`/item/${item._id}`}>
@@ -134,6 +138,7 @@ export default function ItemCard({ item }: { item: any }) {
             <p className="text-xs truncate flex-1">
               {sellerFirstName} {sellerLastName}
             </p>
+            {badge}
             {sellerRating > 0 && (
               <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
@@ -147,6 +152,11 @@ export default function ItemCard({ item }: { item: any }) {
               </div>
             )}
           </div>
+          {sellerContactCount > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              📞 {sellerContactCount} contact{sellerContactCount !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
       </Card>
     </Link>

@@ -83,6 +83,30 @@ router.get("/my-items", async (req, res) => {
   }
 })
 
+router.post("/:userId/track-contact", async (req, res) => {
+  try {
+    const { userId } = req.params
+
+    const user = await User.findByIdAndUpdate(userId, { $inc: { contactCount: 1 } }, { new: true }).select(
+      "contactCount",
+    )
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" })
+    }
+
+    console.log(`[v0] Contact tracked for seller ${userId}. Total contacts: ${user.contactCount}`)
+
+    res.json({
+      message: "Contact tracked successfully",
+      contactCount: user.contactCount,
+    })
+  } catch (error) {
+    console.error("[v0] Error tracking contact:", error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 router.post("/:userId/rate", async (req, res) => {
   try {
     const { rating } = req.body
@@ -106,15 +130,17 @@ router.post("/:userId/rate", async (req, res) => {
     // Update rating (simple average calculation)
     const currentRating = targetUser.rating || 0
     const currentRatingCount = targetUser.ratingCount || 0
-    
+
     const newRatingCount = currentRatingCount + 1
-    const newAverageRating = ((currentRating * currentRatingCount) + rating) / newRatingCount
+    const newAverageRating = (currentRating * currentRatingCount + rating) / newRatingCount
 
     targetUser.rating = newAverageRating
     targetUser.ratingCount = newRatingCount
     await targetUser.save()
 
-    console.log(`[v0] User ${req.user.id} rated user ${targetUserId}: ${rating} stars (new avg: ${newAverageRating.toFixed(2)})`)
+    console.log(
+      `[v0] User ${req.user.id} rated user ${targetUserId}: ${rating} stars (new avg: ${newAverageRating.toFixed(2)})`,
+    )
 
     res.json({
       message: "Rating submitted successfully",
