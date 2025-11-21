@@ -225,12 +225,63 @@ function PendingItemsSection({ items, onApprove, onReject, onDelete, onTogglePro
   )
 }
 
+// Inline ApprovedItemsSection Component
+function ApprovedItemsSection({ items, onTogglePromoted, isLoading = false }: any) {
+  if (items.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <Package className="w-12 h-12 text-blue-600 mx-auto mb-3 opacity-50" />
+        <p className="text-muted-foreground text-lg font-medium">No approved items</p>
+        <p className="text-sm text-muted-foreground mt-1">Items will appear here once approved</p>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {items.map((item: any) => (
+        <Card key={item._id} className="p-6 hover:shadow-md transition-shadow">
+          <div className="flex gap-6 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
+                {item.isPromoted && (
+                  <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white">Promoted</Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-sm mb-3">{item.description?.substring(0, 100)}...</p>
+              <div className="flex gap-4 text-sm flex-wrap">
+                <span className="font-semibold text-primary">₦{item.price?.toLocaleString()}</span>
+                <span className="text-muted-foreground">{item.category}</span>
+                <span className="text-muted-foreground">
+                  Seller: {item.sellerId?.firstName} {item.sellerId?.lastName}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={() => onTogglePromoted(item._id)}
+              disabled={isLoading}
+              className={item.isPromoted ? "bg-gray-600 hover:bg-gray-700" : "bg-purple-600 hover:bg-purple-700"}
+              variant={item.isPromoted ? "default" : "default"}
+            >
+              {item.isPromoted ? "Remove Promoted" : "Mark Promoted"}
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const { user, token, isLoading } = useAuth()
   const router = useRouter()
   const [tab, setTab] = useState("items")
   const [stats, setStats] = useState<any>(null)
   const [pendingItems, setPendingItems] = useState([])
+  const [approvedItems, setApprovedItems] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
@@ -264,11 +315,14 @@ export default function AdminPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [statsRes, itemsRes, usersRes] = await Promise.all([
+      const [statsRes, itemsRes, approvedItemsRes, usersRes] = await Promise.all([
         fetch(`${API_URL}/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/admin/pending-items`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/admin/approved-items`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/admin/users`, {
@@ -278,6 +332,7 @@ export default function AdminPage() {
 
       if (statsRes.ok) setStats(await statsRes.json())
       if (itemsRes.ok) setPendingItems(await itemsRes.json())
+      if (approvedItemsRes.ok) setApprovedItems(await approvedItemsRes.json())
       if (usersRes.ok) setUsers(await usersRes.json())
     } catch (error) {
       console.error("Failed to load admin data:", error)
@@ -413,7 +468,7 @@ export default function AdminPage() {
             <div className="p-6 space-y-8">
               {/* Stats Grid */}
               {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4">
                   <StatsCard
                     label="Total Users"
                     value={stats.totalUsers}
@@ -444,6 +499,24 @@ export default function AdminPage() {
                     icon={<AlertCircle className="w-8 h-8" />}
                     className="border-orange-200 bg-orange-50/50"
                   />
+                  <StatsCard
+                    label="Total Revenue"
+                    value={`₦${(stats.totalRevenue || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 })}`}
+                    icon={<AlertCircle className="w-8 h-8" />}
+                    className="border-green-200 bg-green-50/50"
+                  />
+                  <StatsCard
+                    label="Completed Payments"
+                    value={stats.totalPaymentsCompleted || 0}
+                    icon={<AlertCircle className="w-8 h-8" />}
+                    className="border-blue-200 bg-blue-50/50"
+                  />
+                  <StatsCard
+                    label="Avg Payment"
+                    value={`₦${(stats.averagePayment || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 })}`}
+                    icon={<AlertCircle className="w-8 h-8" />}
+                    className="border-purple-200 bg-purple-50/50"
+                  />
                 </div>
               )}
 
@@ -459,6 +532,16 @@ export default function AdminPage() {
                     }`}
                   >
                     Pending Items ({pendingItems.length})
+                  </button>
+                  <button
+                    onClick={() => setTab("approved")}
+                    className={`px-4 py-3 font-medium transition-colors border-b-2 ${
+                      tab === "approved"
+                        ? "text-primary border-primary"
+                        : "text-muted-foreground hover:text-foreground border-transparent"
+                    }`}
+                  >
+                    Approved Items ({approvedItems.length})
                   </button>
                   <button
                     onClick={() => setTab("users")}
@@ -480,6 +563,14 @@ export default function AdminPage() {
                   onApprove={handleApproveItem}
                   onReject={handleRejectItem}
                   onDelete={handleDeleteItem}
+                  onTogglePromoted={handleTogglePromoted}
+                  isLoading={loading}
+                />
+              )}
+
+              {tab === "approved" && (
+                <ApprovedItemsSection
+                  items={approvedItems}
                   onTogglePromoted={handleTogglePromoted}
                   isLoading={loading}
                 />

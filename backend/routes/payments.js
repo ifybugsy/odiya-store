@@ -1,5 +1,6 @@
 import express from "express"
-import Payment from "../models/Payment.js"
+
+const Payment = (await import("../models/Payment.js")).default
 
 const router = express.Router()
 
@@ -26,7 +27,7 @@ router.post("/create", async (req, res) => {
       // Return bank account details for manual transfer
       bankDetails: {
         accountNumber: "2252184000",
-        purpose: "Odiya Store Upload Fee",
+        purpose: "Bugsy Mart Upload Fee",
       },
     })
   } catch (error) {

@@ -467,7 +467,7 @@ export function ItemDetailClient({ id }: { id: string }) {
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-4">
                     <Button
                       onClick={() => {
                         if (sellerPhone) {
@@ -494,6 +494,11 @@ export function ItemDetailClient({ id }: { id: string }) {
                     <Flag className="w-4 h-4 mr-2" />
                     Report Abuse
                   </Button>
+
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                    <p className="font-medium mb-2">Contact Disclaimer:</p>
+                    <p>Verify seller legitimacy before payment. Meet in safe, public places only.</p>
+                  </div>
                 </div>
 
                 <Button

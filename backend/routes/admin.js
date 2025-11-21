@@ -2,6 +2,7 @@ import express from "express"
 import Item from "../models/Item.js"
 import User from "../models/User.js"
 import { isAdmin } from "../middleware/auth.js"
+import Payment from "../models/Payment.js"
 
 const router = express.Router()
 
@@ -140,11 +141,20 @@ router.get("/stats", async (req, res) => {
     const totalItems = await Item.countDocuments({ isApproved: true })
     const pendingItems = await Item.countDocuments({ status: "pending" })
 
+    const completedPayments = await Payment.find({ status: "completed" })
+
+    const totalRevenue = completedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+    const averagePayment = completedPayments.length > 0 ? totalRevenue / completedPayments.length : 0
+    const totalPaymentsCompleted = completedPayments.length
+
     res.json({
       totalUsers,
       totalSellers,
       totalItems,
       pendingItems,
+      totalRevenue,
+      totalPaymentsCompleted,
+      averagePayment,
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
