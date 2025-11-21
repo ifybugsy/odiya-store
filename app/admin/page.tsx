@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -162,7 +163,7 @@ function StatsCard({ label, value, icon, trend, className = "" }: any) {
 }
 
 // Inline PendingItemsSection Component
-function PendingItemsSection({ items, onApprove, onReject, onDelete, isLoading = false }: any) {
+function PendingItemsSection({ items, onApprove, onReject, onDelete, onTogglePromoted, isLoading = false }: any) {
   if (items.length === 0) {
     return (
       <Card className="p-12 text-center">
@@ -179,7 +180,12 @@ function PendingItemsSection({ items, onApprove, onReject, onDelete, isLoading =
         <Card key={item._id} className="p-6 hover:shadow-md transition-shadow">
           <div className="flex gap-6 mb-4">
             <div className="flex-1">
-              <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
+                {item.isPromoted && (
+                  <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white">Promoted</Badge>
+                )}
+              </div>
               <p className="text-muted-foreground text-sm mb-3">{item.description?.substring(0, 100)}...</p>
               <div className="flex gap-4 text-sm flex-wrap">
                 <span className="font-semibold text-primary">₦{item.price?.toLocaleString()}</span>
@@ -200,6 +206,14 @@ function PendingItemsSection({ items, onApprove, onReject, onDelete, isLoading =
             </Button>
             <Button onClick={() => onReject(item._id)} disabled={isLoading} variant="outline">
               Reject
+            </Button>
+            <Button
+              onClick={() => onTogglePromoted(item._id)}
+              disabled={isLoading}
+              className={item.isPromoted ? "bg-gray-600 hover:bg-gray-700" : "bg-purple-600 hover:bg-purple-700"}
+              variant={item.isPromoted ? "default" : "default"}
+            >
+              {item.isPromoted ? "Remove Promoted" : "Mark Promoted"}
             </Button>
             <Button onClick={() => onDelete(item._id)} disabled={isLoading} variant="destructive">
               Delete
@@ -334,6 +348,18 @@ export default function AdminPage() {
     }
   }
 
+  const handleTogglePromoted = async (itemId: string) => {
+    try {
+      await fetch(`${API_URL}/items/${itemId}/promoted`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      loadData()
+    } catch (error) {
+      console.error("Failed to toggle promoted status:", error)
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
@@ -418,13 +444,6 @@ export default function AdminPage() {
                     icon={<AlertCircle className="w-8 h-8" />}
                     className="border-orange-200 bg-orange-50/50"
                   />
-                  {/* Revenue Calculation Card */}
-                  <StatsCard
-                    label="Total Revenue"
-                    value={`₦${((stats.totalItems || 0) * 150).toLocaleString()}`}
-                    icon={<AlertCircle className="w-8 h-8" />}
-                    className="border-green-200 bg-green-50/50"
-                  />
                 </div>
               )}
 
@@ -461,6 +480,7 @@ export default function AdminPage() {
                   onApprove={handleApproveItem}
                   onReject={handleRejectItem}
                   onDelete={handleDeleteItem}
+                  onTogglePromoted={handleTogglePromoted}
                   isLoading={loading}
                 />
               )}

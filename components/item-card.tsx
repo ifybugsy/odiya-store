@@ -17,13 +17,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 export default function ItemCard({ item }: { item: any }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [contactCount, setContactCount] = useState(item.sellerId?.contactCount || 0)
-
-  console.log("[v0] ItemCard rendering with item:", {
-    id: item?._id,
-    title: item?.title,
-    hasId: !!item?._id,
-    idType: typeof item?._id,
-  })
+  const [reportModalOpen, setReportModalOpen] = useState(false)
 
   if (!item || !item._id) {
     console.error("[v0] ItemCard received item without _id:", item)
@@ -83,109 +77,117 @@ export default function ItemCard({ item }: { item: any }) {
   const badge = item.sellerId ? <SellerBadgeComponent seller={item.sellerId} size="sm" /> : null
 
   return (
-    <Link href={`/item/${item._id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
-        <div className="relative w-full h-40 bg-muted overflow-hidden">
-          <img
-            src={currentImage || "/placeholder.svg"}
-            alt={`${item.title} - Image ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
-            onError={handleImageError}
-          />
-
-          <div className="absolute top-2 left-2 z-10">
-            <div
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-            >
-              <SaveButton itemId={item._id} size="sm" showLabel={false} variant="ghost" />
+    <>
+      <Link href={`/item/${item._id}`}>
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative">
+          {item.isPromoted && (
+            <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-pink-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
+              Promoted
             </div>
-          </div>
+          )}
 
-          {/* Image navigation buttons - only show if multiple images */}
-          {hasMultipleImages && (
-            <>
-              <button
-                onClick={handlePrevImage}
-                className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Previous image"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Next image"
-              >
-                <ChevronRight size={16} />
-              </button>
+          <div className="relative w-full h-40 bg-muted overflow-hidden">
+            <img
+              src={currentImage || "/placeholder.svg"}
+              alt={`${item.title} - Image ${currentImageIndex + 1}`}
+              className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
+              onError={handleImageError}
+            />
 
-              {/* Image counter indicator */}
-              <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                {currentImageIndex + 1}/{item.images.length}
+            <div className="absolute top-2 left-2 z-10">
+              <div
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+              >
+                <SaveButton itemId={item._id} size="sm" showLabel={false} variant="ghost" />
               </div>
-            </>
-          )}
+            </div>
 
-          <Badge className="absolute top-2 right-2 bg-primary">{item.category || "General"}</Badge>
-        </div>
-        <div className="p-3">
-          <h3 className="font-semibold text-sm line-clamp-2">{item.title || "Untitled Item"}</h3>
-          <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
-          <p className="text-xs text-muted-foreground">{item.location || "Location not specified"}</p>
-          {item.condition && (
-            <div className="mt-2">
-              <Badge variant="secondary" className="text-xs">
-                {item.condition}
-              </Badge>
+            {hasMultipleImages && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={16} />
+                </button>
+
+                <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                  {currentImageIndex + 1}/{item.images.length}
+                </div>
+              </>
+            )}
+
+            <Badge className="absolute top-2 right-2 bg-primary">{item.category || "General"}</Badge>
+          </div>
+          <div className="p-3">
+            <h3 className="font-semibold text-sm line-clamp-2">{item.title || "Untitled Item"}</h3>
+            <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
+            <p className="text-xs text-muted-foreground">{item.location || "Location not specified"}</p>
+            {item.condition && (
+              <div className="mt-2">
+                <Badge variant="secondary" className="text-xs">
+                  {item.condition}
+                </Badge>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              {sellerProfileImage && sellerProfileImage.trim() ? (
+                <img
+                  src={getImageUrl(sellerProfileImage) || "/placeholder.svg"}
+                  alt={`${sellerFirstName} ${sellerLastName}`}
+                  className="w-6 h-6 rounded-full object-cover"
+                  onError={handleImageError}
+                />
+              ) : null}
+              <div
+                data-fallback
+                className={`w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground ${
+                  sellerProfileImage && sellerProfileImage.trim() ? "hidden" : ""
+                }`}
+              >
+                {getUserInitials(sellerFirstName, sellerLastName)}
+              </div>
+              <p className="text-xs truncate flex-1">
+                {sellerFirstName} {sellerLastName}
+              </p>
+              {badge}
+              {sellerRating > 0 && (
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-3 h-3 ${
+                        i < Math.floor(sellerRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-          <div className="flex items-center gap-2 mt-2">
-            {sellerProfileImage && sellerProfileImage.trim() ? (
-              <img
-                src={getImageUrl(sellerProfileImage) || "/placeholder.svg"}
-                alt={`${sellerFirstName} ${sellerLastName}`}
-                className="w-6 h-6 rounded-full object-cover"
-                onError={handleImageError}
-              />
-            ) : null}
-            <div
-              data-fallback
-              className={`w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground ${
-                sellerProfileImage && sellerProfileImage.trim() ? "hidden" : ""
-              }`}
-            >
-              {getUserInitials(sellerFirstName, sellerLastName)}
-            </div>
-            <p className="text-xs truncate flex-1">
-              {sellerFirstName} {sellerLastName}
-            </p>
-            {badge}
-            {sellerRating > 0 && (
-              <div className="flex items-center gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3 h-3 ${
-                      i < Math.floor(sellerRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                    }`}
-                  />
-                ))}
+            {contactCount > 0 && (
+              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                <Phone className="w-3 h-3" />
+                <span>
+                  {contactCount} contact{contactCount !== 1 ? "s" : ""}
+                </span>
               </div>
             )}
           </div>
-          {contactCount > 0 && (
-            <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-              <Phone className="w-3 h-3" />
-              <span>
-                {contactCount} contact{contactCount !== 1 ? "s" : ""}
-              </span>
-            </div>
-          )}
-        </div>
-      </Card>
-    </Link>
+        </Card>
+      </Link>
+
+      {/* Removed Report Abuse button from item cards */}
+    </>
   )
 }

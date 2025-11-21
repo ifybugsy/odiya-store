@@ -1,7 +1,6 @@
 import express from "express"
 import Item from "../models/Item.js"
 import { authenticateToken, isSeller } from "../middleware/auth.js"
-import mongoose from "mongoose"
 
 const router = express.Router()
 
@@ -29,7 +28,7 @@ router.get("/", async (req, res) => {
     }
 
     const items = await Item.find(filter)
-      .populate("sellerId", "firstName lastName phone profileImage rating ratingCount")
+      .populate("sellerId", "firstName lastName phone profileImage rating ratingCount contactCount")
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit)
@@ -74,18 +73,17 @@ router.get("/:id", async (req, res) => {
     console.log("[Backend] Fetching item with ID:", itemId)
     console.log("[Backend] ID type:", typeof itemId)
     console.log("[Backend] ID length:", itemId.length)
-    
+
     const isValidObjectId = /^[a-f\d]{24}$/i.test(itemId)
     if (!isValidObjectId) {
       console.log("[Backend] Invalid ObjectId format:", itemId)
       return res.status(404).json({ error: "Invalid item ID format" })
     }
 
-    const item = await Item.findByIdAndUpdate(
-      itemId,
-      { $inc: { views: 1 } },
-      { new: true }
-    ).populate("sellerId", "firstName lastName phone email profileImage rating ratingCount businessName")
+    const item = await Item.findByIdAndUpdate(itemId, { $inc: { views: 1 } }, { new: true }).populate(
+      "sellerId",
+      "firstName lastName phone email profileImage rating ratingCount businessName",
+    )
 
     if (!item) {
       console.log("[Backend] Item not found with ID:", itemId)
@@ -250,6 +248,30 @@ router.put("/:id/sold", authenticateToken, async (req, res) => {
 
     res.json({
       message: "Item marked as sold",
+      item,
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Toggle promoted status
+router.put("/:id/promoted", authenticateToken, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: "Only admins can toggle promoted status" })
+    }
+
+    const item = await Item.findById(req.params.id)
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" })
+    }
+
+    item.isPromoted = !item.isPromoted
+    await item.save()
+
+    res.json({
+      message: "Promoted status updated",
       item,
     })
   } catch (error) {

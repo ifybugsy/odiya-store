@@ -8,7 +8,7 @@ import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, MapPin, AlertTriangle, Phone, ChevronLeft, ChevronRight, Flag, MessageCircle } from "lucide-react"
 import { ShareButtons } from "@/components/share-buttons"
 import { SaveButton } from "@/components/save-button"
 import RelatedItems from "@/components/related-items"
@@ -466,6 +466,34 @@ export function ItemDetailClient({ id }: { id: string }) {
                       </a>
                     </div>
                   )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        if (sellerPhone) {
+                          const message = `Hi, I'm interested in your listing: ${item.title}. Can we discuss the price or details?`
+                          const whatsappUrl = `https://wa.me/${sellerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
+                          window.open(whatsappUrl, "_blank")
+                        }
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Send Offer
+                    </Button>
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      const reportButton = document.querySelector("[data-report-abuse]") as HTMLButtonElement
+                      reportButton?.click()
+                    }}
+                    variant="outline"
+                    className="w-full border-red-500 text-red-600 hover:bg-red-50"
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report Abuse
+                  </Button>
                 </div>
 
                 <Button
