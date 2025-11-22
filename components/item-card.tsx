@@ -79,7 +79,7 @@ export default function ItemCard({ item }: { item: any }) {
   return (
     <>
       <Link href={`/item/${item._id}`}>
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative">
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative animate-item-entrance">
           {item.isPromoted && (
             <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-pink-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
               Promoted

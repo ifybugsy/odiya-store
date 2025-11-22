@@ -155,3 +155,57 @@ html {
 .animate-scroll:hover {
   animation-play-state: paused;
 }
+
+/* Added staggered fade-in animation for items on scroll */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-item-entrance {
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-item-entrance:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.animate-item-entrance:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.animate-item-entrance:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.animate-item-entrance:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.animate-item-entrance:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.animate-item-entrance:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.animate-item-entrance:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.animate-item-entrance:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.animate-item-entrance:nth-child(9) {
+  animation-delay: 0.45s;
+}
+.animate-item-entrance:nth-child(10) {
+  animation-delay: 0.5s;
+}
+.animate-item-entrance:nth-child(11) {
+  animation-delay: 0.55s;
+}
+.animate-item-entrance:nth-child(12) {
+  animation-delay: 0.6s;
+}

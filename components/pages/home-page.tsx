@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
-import { Search, Filter, AlertCircle } from 'lucide-react'
+import CategoryGrid from "@/components/category-grid"
+import PopularAdsSection from "@/components/popular-ads-section"
+import { Search, Filter, AlertCircle } from "lucide-react"
 import { apiRequest, validateApiConfig } from "@/lib/api-utils"
 
 const FALLBACK_CATEGORIES = ["Electronics", "Furniture", "Fashion", "Books", "Sports", "Home"]
@@ -36,7 +38,7 @@ export default function HomePage() {
       try {
         const data = await apiRequest("/items/categories")
         setCategories(data.categories || FALLBACK_CATEGORIES)
-        setConfigWarning("") // Clear warning if successful
+        setConfigWarning("")
       } catch (error) {
         console.error("[v0] Failed to load categories:", error instanceof Error ? error.message : String(error))
         setCategories(FALLBACK_CATEGORIES)
@@ -56,28 +58,32 @@ export default function HomePage() {
       setIsLoading(true)
       try {
         let endpoint = `/items?page=${pageNum}`
-        if (selectedCategory) endpoint += `&category=${selectedCategory}`
+        if (selectedCategory) endpoint += `&category=${encodeURIComponent(selectedCategory)}`
         if (selectedCondition) endpoint += `&condition=${encodeURIComponent(selectedCondition)}`
         if (searchQuery) endpoint += `&search=${encodeURIComponent(searchQuery)}`
 
+        console.log("[v0] HomePage loadItems endpoint:", endpoint)
         const data = await apiRequest(endpoint)
 
-        console.log("[v0] Loaded items count:", data.items?.length)
-        console.log("[v0] First item ID:", data.items?.[0]?._id)
-        console.log("[v0] Items sample:", data.items?.slice(0, 2).map((item: any) => ({
-          id: item._id,
-          title: item.title,
-          hasId: !!item._id
-        })))
-
-        if (append) {
-          setItems((prev) => [...prev, ...data.items])
-        } else {
-          setItems(data.items)
+        let itemsList = []
+        if (Array.isArray(data?.items)) {
+          itemsList = data.items
+        } else if (Array.isArray(data)) {
+          itemsList = data
+        } else if (data && typeof data === "object") {
+          itemsList = Object.values(data).find((v) => Array.isArray(v)) || []
         }
 
-        setHasMore(pageNum < data.pages)
-        setConfigWarning("") // Clear warning if successful
+        console.log("[v0] HomePage loaded items count:", itemsList.length)
+
+        if (append) {
+          setItems((prev) => [...prev, ...itemsList])
+        } else {
+          setItems(itemsList)
+        }
+
+        setHasMore(pageNum < (data.pages || 1))
+        setConfigWarning("")
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Failed to load items"
         console.error("[v0] Failed to load items:", errorMessage)
@@ -124,10 +130,11 @@ export default function HomePage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800">Network issue</p>
+                <p className="text-sm font-medium text-yellow-800">API Configuration Issue</p>
                 <p className="text-xs text-yellow-700 mt-1">{configWarning}</p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  please be patient <code className="bg-yellow-100 px-1 rounded">Loading</code> try refreshing
+                  Please set the <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_API_URL</code> environment
+                  variable to your backend API URL.
                 </p>
               </div>
             </div>
@@ -135,7 +142,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Search Section */}
+      {/* Search and Filter Section - Moved above categories */}
       <section className="bg-white border-b border-border sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex gap-4 flex-col md:flex-row">
@@ -148,8 +155,8 @@ export default function HomePage() {
                 className="pl-10"
               />
             </div>
-            <Button 
-              variant={showFilters ? "default" : "outline"} 
+            <Button
+              variant={showFilters ? "default" : "outline"}
               className="flex items-center gap-2"
               onClick={() => setShowFilters(!showFilters)}
             >
@@ -157,7 +164,7 @@ export default function HomePage() {
               Filter
             </Button>
           </div>
-          
+
           {showFilters && (
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <h3 className="text-sm font-semibold mb-3">Item Condition</h3>
@@ -185,41 +192,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      {categories.length > 0 && (
-        <section className="bg-white border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              <Button
-                variant={selectedCategory === "" ? "default" : "outline"}
-                onClick={() => setSelectedCategory("")}
-                className="whitespace-nowrap flex-shrink-0"
-              >
-                All
-              </Button>
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category)}
-                  className="whitespace-nowrap flex-shrink-0"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Browse Categories Section */}
+      <CategoryGrid selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
 
-      {/* Items Grid */}
+      {/* Popular Ads Section - Shows items related to selected category or all items */}
+      <PopularAdsSection selectedCategory={selectedCategory} />
+
+      {/* Main Items Grid - Removed redundant section, now only used for infinite scroll */}
       <section id="items" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive text-destructive rounded-md">
             <div className="flex items-start gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium">Error loading items might be your network, try refreshing</p>
+                <p className="font-medium">Error loading items</p>
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>
@@ -228,7 +214,9 @@ export default function HomePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {items.map((item) => (
-            <ItemCard key={item._id} item={item} />
+            <div key={item._id} className="animate-item-entrance">
+              <ItemCard item={item} />
+            </div>
           ))}
         </div>
 
