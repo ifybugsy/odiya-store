@@ -1,4 +1,4 @@
-export type BadgeType = "bronze" | "silver" | "gold" | "diamond" | null
+export type BadgeType = "verified" | "bronze" | "silver" | "gold" | "diamond" | null
 
 export interface SellerStats {
   contactCount: number
@@ -12,6 +12,7 @@ export interface SellerStats {
 
 /**
  * Determine seller badge based on activity metrics
+ * Verified: 2+ items sold
  * Bronze: 10+ items listed or 5+ items sold
  * Silver: 25+ items listed or 15+ items sold
  * Gold: 50+ items listed or 30+ items sold or 4.5+ rating with 20+ reviews
@@ -19,6 +20,11 @@ export interface SellerStats {
  */
 export function getSellerBadge(stats: SellerStats): BadgeType {
   const daysActive = stats.createdAt ? (Date.now() - new Date(stats.createdAt).getTime()) / (1000 * 60 * 60 * 24) : 0
+
+  // Verified: Entry-level verification
+  if (stats.itemsSold >= 2) {
+    return "verified"
+  }
 
   // Diamond: Highest tier
   if (stats.totalItemsListed >= 100 || stats.itemsSold >= 50 || (stats.rating >= 4.8 && stats.ratingCount >= 50)) {
@@ -48,6 +54,7 @@ export function getSellerBadge(stats: SellerStats): BadgeType {
 }
 
 export const badgeColors = {
+  verified: "bg-green-600",
   bronze: "bg-amber-600",
   silver: "bg-slate-400",
   gold: "bg-yellow-500",
@@ -55,6 +62,7 @@ export const badgeColors = {
 }
 
 export const badgeTextColors = {
+  verified: "text-green-600",
   bronze: "text-amber-600",
   silver: "text-slate-400",
   gold: "text-yellow-500",

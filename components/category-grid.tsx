@@ -1,6 +1,7 @@
 "use client"
 
-import type React from "react"
+import React from "react"
+import { useRouter } from "next/navigation"
 
 import { Card } from "@/components/ui/card"
 import {
@@ -22,8 +23,8 @@ import {
 
 interface Category {
   id: string
-  displayName: string // Display name shown to user
-  apiName: string // API category name sent to backend
+  displayName: string
+  apiName: string
   icon: React.ReactNode
   color: string
   bgColor: string
@@ -33,7 +34,7 @@ const CATEGORIES: Category[] = [
   {
     id: "vehicles",
     displayName: "Vehicles",
-    apiName: "Cars", // Map display name to API category
+    apiName: "Cars",
     icon: <Truck className="w-12 h-12" />,
     color: "text-red-500",
     bgColor: "bg-red-50",
@@ -158,13 +159,32 @@ interface CategoryGridProps {
 }
 
 export default function CategoryGrid({ selectedCategory, onCategoryChange }: CategoryGridProps) {
-  const handleCategoryClick = (category: Category) => {
-    onCategoryChange(category.apiName)
+  const router = useRouter()
+
+  const getCategorySlug = (id: string): string => {
+    const slugMap: Record<string, string> = {
+      vehicles: "vehicles",
+      phones: "phones-tablets",
+      electronics: "electronics-computers",
+      furniture: "furniture",
+      fashion: "fashion",
+      jobs: "jobs",
+      services: "services",
+      health: "health-beauty",
+      babies: "babies-children",
+      construction: "construction-repair",
+      food: "food-agriculture",
+      artisan: "artisan",
+      realestate: "real-estate",
+      pets: "animals-pets",
+      beverages: "beverages",
+    }
+    return slugMap[id] || id
   }
 
-  const getSelectedCategoryDisplay = () => {
-    const category = CATEGORIES.find((c) => c.apiName === selectedCategory)
-    return category?.displayName || ""
+  const handleCategoryClick = (category: Category) => {
+    const slug = getCategorySlug(category.id)
+    router.push(`/category/${slug}`)
   }
 
   return (
@@ -172,25 +192,23 @@ export default function CategoryGrid({ selectedCategory, onCategoryChange }: Cat
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl font-bold text-foreground mb-8 text-balance">Browse Categories</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {CATEGORIES.map((category) => (
             <div key={category.id} onClick={() => handleCategoryClick(category)}>
               <Card
-                className={`${category.bgColor} border-none cursor-pointer hover:shadow-lg transition-all duration-300 group overflow-hidden ${
-                  selectedCategory === category.apiName ? "ring-2 ring-primary" : ""
-                }`}
+                className={`${category.bgColor} border-none cursor-pointer hover:shadow-lg transition-all duration-300 group overflow-hidden`}
               >
-                <div className="p-6 flex flex-col items-center justify-center text-center h-full min-h-48">
-                  <div className={`${category.color} mb-4 transition-transform group-hover:scale-110`}>
-                    {category.icon}
+                <div className="p-2 sm:p-3 md:p-4 flex flex-col items-center justify-center text-center h-full min-h-[100px] sm:min-h-[120px] md:min-h-[140px]">
+                  <div className={`${category.color} mb-2 sm:mb-3 transition-transform group-hover:scale-110`}>
+                    {category.icon && React.isValidElement(category.icon)
+                      ? React.cloneElement(category.icon as React.ReactElement<any>, {
+                          className: "w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8",
+                        })
+                      : category.icon}
                   </div>
 
                   <h3
-                    className={`text-sm md:text-base font-semibold transition-colors text-pretty ${
-                      selectedCategory === category.apiName
-                        ? "text-foreground font-bold"
-                        : "text-muted-foreground group-hover:text-foreground"
-                    }`}
+                    className={`text-xs sm:text-sm md:text-base font-semibold transition-colors text-pretty line-clamp-2 text-muted-foreground group-hover:text-foreground`}
                   >
                     {category.displayName}
                   </h3>

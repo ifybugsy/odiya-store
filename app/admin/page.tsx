@@ -210,10 +210,14 @@ function PendingItemsSection({ items, onApprove, onReject, onDelete, onTogglePro
             <Button
               onClick={() => onTogglePromoted(item._id)}
               disabled={isLoading}
-              className={item.isPromoted ? "bg-gray-600 hover:bg-gray-700" : "bg-purple-600 hover:bg-purple-700"}
-              variant={item.isPromoted ? "default" : "default"}
+              className={`transition-all ${
+                item.isPromoted
+                  ? "bg-gray-500 hover:bg-gray-600 text-white"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
+              variant="default"
             >
-              {item.isPromoted ? "Remove Promoted" : "Mark Promoted"}
+              {item.isPromoted ? "✓ Promoted" : "🚀 Promote"}
             </Button>
             <Button onClick={() => onDelete(item._id)} disabled={isLoading} variant="destructive">
               Delete
@@ -263,10 +267,14 @@ function ApprovedItemsSection({ items, onTogglePromoted, isLoading = false }: an
             <Button
               onClick={() => onTogglePromoted(item._id)}
               disabled={isLoading}
-              className={item.isPromoted ? "bg-gray-600 hover:bg-gray-700" : "bg-purple-600 hover:bg-purple-700"}
-              variant={item.isPromoted ? "default" : "default"}
+              className={`transition-all ${
+                item.isPromoted
+                  ? "bg-gray-500 hover:bg-gray-600 text-white"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
+              variant="default"
             >
-              {item.isPromoted ? "Remove Promoted" : "Mark Promoted"}
+              {item.isPromoted ? "✓ Promoted" : "🚀 Promote"}
             </Button>
           </div>
         </Card>
@@ -405,13 +413,23 @@ export default function AdminPage() {
 
   const handleTogglePromoted = async (itemId: string) => {
     try {
-      await fetch(`${API_URL}/items/${itemId}/promoted`, {
+      const response = await fetch(`${API_URL}/items/${itemId}/promoted`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       })
-      loadData()
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error("[v0] Promote API error:", response.status, errorData)
+        alert(`Failed to toggle promoted status: ${errorData.message || response.statusText}`)
+        return
+      }
+
+      await loadData()
+      console.log("[v0] Item promotion status toggled successfully:", itemId)
     } catch (error) {
-      console.error("Failed to toggle promoted status:", error)
+      console.error("[v0] Failed to toggle promoted status:", error)
+      alert("Failed to toggle promoted status. Please try again.")
     }
   }
 

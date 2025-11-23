@@ -80,12 +80,6 @@ export default function ItemCard({ item }: { item: any }) {
     <>
       <Link href={`/item/${item._id}`}>
         <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative animate-item-entrance">
-          {item.isPromoted && (
-            <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-pink-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
-              Promoted
-            </div>
-          )}
-
           <div className="relative w-full h-40 bg-muted overflow-hidden">
             <img
               src={currentImage || "/placeholder.svg"}
@@ -133,6 +127,11 @@ export default function ItemCard({ item }: { item: any }) {
           <div className="p-3">
             <h3 className="font-semibold text-sm line-clamp-2">{item.title || "Untitled Item"}</h3>
             <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
+            {item.isPromoted && (
+              <div className="mb-3 bg-gradient-to-r from-pink-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md inline-block">
+                Promoted
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">{item.location || "Location not specified"}</p>
             {item.condition && (
               <div className="mt-2">
@@ -186,8 +185,6 @@ export default function ItemCard({ item }: { item: any }) {
           </div>
         </Card>
       </Link>
-
-      {/* Removed Report Abuse button from item cards */}
     </>
   )
 }
