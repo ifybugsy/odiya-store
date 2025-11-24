@@ -31,7 +31,7 @@ const DEFAULT_NEWS: NewsItem[] = [
   },
   {
     id: "3",
-    text: "📦 Free shipping on all orders over $50 - No minimum purchases",
+    text: "📦 Free shipping on all orders over ₦10000 - No minimum purchases",
     category: "Shipping",
     priority: "medium",
   },
