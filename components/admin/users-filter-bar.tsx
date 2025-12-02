@@ -51,6 +51,7 @@ export default function UsersFilterBar({
               <SelectItem value="seller">Sellers Only</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground mt-1">Vendors are managed in the Vendor Management section</p>
         </div>
 
         <div>

@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { useVendorAuth } from "@/lib/vendor-auth-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { useRiderAuth } from "@/lib/rider-auth-context"
 import { useBuyerAuth } from "@/lib/buyer-auth-context"
@@ -15,6 +16,7 @@ import NewsTicker from "@/components/news-ticker"
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { user, logout } = useAuth()
+  const { vendor, logoutVendor } = useVendorAuth()
   const { rider, logout: riderLogout } = useRiderAuth()
   const { buyer, logout: buyerLogout } = useBuyerAuth()
   const { savedItems } = useWishlist()
@@ -22,6 +24,12 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout()
+    router.push("/")
+    setIsOpen(false)
+  }
+
+  const handleVendorLogout = () => {
+    logoutVendor()
     router.push("/")
     setIsOpen(false)
   }
@@ -39,7 +47,7 @@ export default function Navbar() {
   }
 
   const handleBecomeSeller = () => {
-    router.push("/login")
+    router.push("/buyer/login")
     setIsOpen(false)
   }
 
@@ -54,7 +62,7 @@ export default function Navbar() {
                 alt="Bugsymat.shop - Buy & Sell Online"
                 width={280}
                 height={92}
-                className="h-12 sm:h-18 md:h-20 w-auto"
+                className="h-16 sm:h-20 md:h-24 w-auto"
                 priority
               />
             </Link>
@@ -69,7 +77,17 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {user ? (
+              {vendor ? (
+                <>
+                  <Link href="/vendor/dashboard" className="text-foreground hover:text-primary transition">
+                    Vendor Dashboard
+                  </Link>
+                  <Button onClick={handleVendorLogout} variant="outline" size="sm">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : user ? (
                 <>
                   <Link href="/dashboard" className="text-foreground hover:text-primary transition">
                     Dashboard
@@ -101,8 +119,9 @@ export default function Navbar() {
                 </>
               ) : buyer ? (
                 <>
+                  <span className="text-foreground font-medium">Hi, {buyer.firstName}</span>
                   <Link href="/buyer/dashboard" className="text-foreground hover:text-primary transition">
-                    Find Rides
+                    Dashboard
                   </Link>
                   <Button onClick={handleBuyerLogout} variant="outline" size="sm">
                     <LogOut className="w-4 h-4 mr-2" />
@@ -111,7 +130,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login">
+                  <Link href="/buyer/login">
                     <Button variant="outline" size="sm">
                       Login
                     </Button>
@@ -121,33 +140,6 @@ export default function Navbar() {
                   </Button>
                 </>
               )}
-
-              {/* 
-              <Button
-                onClick={handlePickARide}
-                size="sm"
-                variant="outline"
-                className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200"
-              >
-                <Truck className="w-4 h-4" />
-                <span className="hidden lg:inline">Pick a Ride</span>
-                <span className="lg:hidden">Ride</span>
-              </Button>
-              */}
-
-              {/* 
-              {!user && !rider && !buyer && (
-                <Button
-                  onClick={handleBecomeRider}
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 bg-transparent"
-                >
-                  <Truck className="w-4 h-4" />
-                  <span className="hidden lg:inline">Become a Rider</span>
-                </Button>
-              )}
-              */}
             </div>
 
             {/* Mobile Menu Button */}
@@ -176,7 +168,24 @@ export default function Navbar() {
                 {savedItems.length > 0 && <span className="text-red-500 font-bold">•</span>}
                 Saved Items {savedItems.length > 0 && `(${savedItems.length})`}
               </Link>
-              {user ? (
+              {vendor ? (
+                <>
+                  <Link
+                    href="/vendor/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="block py-2 px-4 text-foreground hover:bg-muted rounded"
+                  >
+                    Vendor Dashboard
+                  </Link>
+                  <button
+                    onClick={handleVendorLogout}
+                    className="w-full text-left py-2 px-4 text-foreground hover:bg-muted rounded flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </>
+              ) : user ? (
                 <>
                   <Link
                     href="/dashboard"
@@ -230,12 +239,15 @@ export default function Navbar() {
                 </>
               ) : buyer ? (
                 <>
+                  <div className="py-2 px-4 text-foreground font-semibold">
+                    Hi, {buyer.firstName} {buyer.lastName}
+                  </div>
                   <Link
                     href="/buyer/dashboard"
                     onClick={() => setIsOpen(false)}
                     className="block py-2 px-4 text-foreground hover:bg-muted rounded"
                   >
-                    Find Rides
+                    Dashboard
                   </Link>
                   <button
                     onClick={handleBuyerLogout}
@@ -248,7 +260,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link
-                    href="/login"
+                    href="/buyer/login"
                     onClick={() => setIsOpen(false)}
                     className="block py-2 px-4 text-foreground hover:bg-muted rounded"
                   >
@@ -262,28 +274,6 @@ export default function Navbar() {
                   </button>
                 </>
               )}
-
-              {/* 
-              <button
-                onClick={handlePickARide}
-                className="w-full text-left py-2 px-4 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded mt-2 flex items-center gap-2 border border-amber-200"
-              >
-                <Truck className="w-4 h-4" />
-                Pick a Ride
-              </button>
-              */}
-
-              {/* 
-              {!user && !rider && !buyer && (
-                <button
-                  onClick={handleBecomeRider}
-                  className="w-full text-left py-2 px-4 text-foreground hover:bg-muted rounded mt-2 flex items-center gap-2"
-                >
-                  <Truck className="w-4 h-4" />
-                  Become a Rider
-                </button>
-              )}
-              */}
             </div>
           )}
         </div>

@@ -402,6 +402,12 @@ export function ItemDetailClient({ id }: { id: string }) {
                   <p className="text-sm text-muted-foreground">
                     Views: <span className="font-semibold">{item.views || 0}</span>
                   </p>
+                  {item.sellerId?.createdAt && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Joined bugsymart since{" "}
+                      <span className="font-semibold">{new Date(item.sellerId.createdAt).getFullYear()}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="border-t border-border pt-4">

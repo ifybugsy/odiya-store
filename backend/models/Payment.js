@@ -9,7 +9,7 @@ const paymentSchema = new mongoose.Schema({
   itemId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Item",
-    required: true,
+    required: false, // Made optional since vendor boosts don't have itemId
   },
   amount: {
     type: Number,
@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["upload_fee", "purchase"],
+    enum: ["upload_fee", "purchase", "boost_seller", "boost_vendor"],
     default: "upload_fee",
   },
   status: {
@@ -31,6 +31,11 @@ const paymentSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Vendor",
+    required: false,
   },
 })
 

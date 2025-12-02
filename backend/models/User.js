@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isVendor: {
+    type: Boolean,
+    default: false,
+  },
   isSuspended: {
     type: Boolean,
     default: false,
@@ -36,6 +40,24 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false,
+  },
+  adminRole: {
+    type: String,
+    enum: ["super_admin", "admin", "vendor_manager", "seller_manager", "support_admin"],
+    default: null,
+  },
+  adminPermissions: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AdminRole",
+  },
+  adminSince: Date,
+  adminActivity: {
+    lastLogin: Date,
+    lastAction: Date,
+    actionCount: {
+      type: Number,
+      default: 0,
+    },
   },
   address: String,
   city: String,
@@ -69,6 +91,23 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  totalReferrals: {
+    type: Number,
+    default: 0,
+  },
+  totalReferralEarnings: {
+    type: Number,
+    default: 0,
   },
 })
 

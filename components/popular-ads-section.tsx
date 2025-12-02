@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import ItemCard from "@/components/item-card"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { apiRequest } from "@/lib/api-utils"
 
 interface PopularAdsSectionProps {
@@ -63,13 +64,19 @@ export default function PopularAdsSection({ selectedCategory }: PopularAdsSectio
     : "Featured items — promoted for better visibility"
 
   return (
-    <section className="bg-background py-12 border-t border-border">
+    <section className="bg-gradient-to-br from-amber-50/50 via-background to-orange-50/50 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10 py-12 border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-foreground text-balance">{displayTitle}</h2>
-            <p className="text-muted-foreground text-sm mt-2">{displayDescription}</p>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-3xl font-bold text-foreground text-balance">{displayTitle}</h2>
+              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 shadow-md font-bold px-3 py-1">
+                <Star className="w-3 h-3 mr-1 fill-white" />
+                PROMOTED
+              </Badge>
+            </div>
+            <p className="text-muted-foreground text-sm">{displayDescription}</p>
           </div>
           {selectedCategory && (
             <Link href={`/?category=${encodeURIComponent(selectedCategory)}`}>

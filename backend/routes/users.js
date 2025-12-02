@@ -83,6 +83,31 @@ router.get("/my-items", async (req, res) => {
   }
 })
 
+// Get user's followed vendors
+router.get("/followed-vendors", async (req, res) => {
+  try {
+    const VendorFollower = (await import("../models/VendorFollower.js")).default
+    const Vendor = (await import("../models/Vendor.js")).default
+
+    // Get all vendor IDs this user is following
+    const follows = await VendorFollower.find({ userId: req.user.id })
+    const vendorIds = follows.map((f) => f.vendorId)
+
+    // Get vendor details
+    const vendors = await Vendor.find({
+      _id: { $in: vendorIds },
+      status: "approved",
+    }).populate("userId", "firstName lastName email phone profileImage")
+
+    console.log(`[v0] User ${req.user.id} following ${vendors.length} vendors`)
+
+    res.json({ vendors })
+  } catch (error) {
+    console.error("[v0] Error fetching followed vendors:", error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 router.post("/:userId/track-contact", async (req, res) => {
   try {
     const { userId } = req.params

@@ -5,13 +5,15 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ShoppingBag, Truck, ChevronRight } from "lucide-react"
+import { ShoppingBag, Truck, Building2, ChevronRight } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRiderAuth } from "@/lib/rider-auth-context"
+import { useVendorAuth } from "@/lib/vendor-auth-context"
 
 export default function RoleSelectionPage() {
   const { user } = useAuth()
   const { rider } = useRiderAuth()
+  const { vendor } = useVendorAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
@@ -44,7 +46,13 @@ export default function RoleSelectionPage() {
       console.log("[v0] User is already a seller, redirecting to become-seller")
       router.push("/become-seller")
     }
-  }, [user, rider, mounted, from, router])
+
+    // If vendor is logged in, redirect to vendor dashboard
+    if (vendor && from === "vendor-button") {
+      console.log("[v0] User is already a vendor, redirecting to vendor dashboard")
+      router.push("/vendor/dashboard")
+    }
+  }, [user, rider, vendor, mounted, from, router])
 
   if (!mounted) return null
 
@@ -59,6 +67,17 @@ export default function RoleSelectionPage() {
       // If unauthenticated, go to login with redirect back to this page
       console.log("[v0] Unauthenticated user redirecting to login, then back to role-selection")
       router.push(`/login?redirect=role-selection&from=seller-button`)
+    }
+  }
+
+  // CHANGE: added vendor registration handler
+  const handleBecomeVendor = () => {
+    if (vendor) {
+      console.log("[v0] Already a vendor, redirecting to dashboard")
+      router.push("/vendor/dashboard")
+    } else {
+      console.log("[v0] Proceeding to vendor login/registration")
+      router.push("/vendor/login")
     }
   }
 
@@ -84,16 +103,16 @@ export default function RoleSelectionPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              {user || rider ? "Choose Your Role" : "Join Odiya Store"}
+              {user || rider || vendor ? "Choose Your Role" : "Join Odiya Store"}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {user || rider
+              {user || rider || vendor
                 ? "Select how you want to participate in our marketplace"
-                : "Create an account and choose your role as a seller or rider"}
+                : "Create an account and choose your role as a seller, vendor, or rider"}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             {/* Seller Option */}
             <Card
               className="p-8 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary cursor-pointer group"
@@ -142,15 +161,64 @@ export default function RoleSelectionPage() {
               </div>
             </Card>
 
-            {/* Rider Option */}
+            {/* CHANGE: added vendor option */}
+            {/* Vendor Option */}
             <Card
               className="p-8 hover:shadow-lg transition-all border-2 border-transparent hover:border-secondary cursor-pointer group"
-              onClick={handleBecomeRider}
+              onClick={handleBecomeVendor}
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-                    <Truck className="w-6 h-6 text-secondary" />
+                    <Building2 className="w-6 h-6 text-secondary" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground">Become a Vendor</h2>
+                </div>
+
+                <p className="text-muted-foreground mb-6 flex-grow">
+                  Create your branded storefront, customize your store, and build customer relationships
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    </div>
+                    <span className="text-sm text-foreground">Customize your branded storefront</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    </div>
+                    <span className="text-sm text-foreground">Direct messaging with customers</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    </div>
+                    <span className="text-sm text-foreground">Build your brand and customer base</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleBecomeVendor}
+                  className="w-full bg-secondary hover:bg-secondary/90 h-11 flex items-center justify-center gap-2 group-hover:gap-3 transition-all"
+                >
+                  Get Started
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+
+            {/* Rider Option */}
+            <Card
+              className="p-8 hover:shadow-lg transition-all border-2 border-transparent hover:border-amber-500 cursor-pointer group"
+              onClick={handleBecomeRider}
+            >
+              <div className="flex flex-col h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                    <Truck className="w-6 h-6 text-amber-700" />
                   </div>
                   <h2 className="text-2xl font-bold text-foreground">Become a Rider</h2>
                 </div>
@@ -161,20 +229,20 @@ export default function RoleSelectionPage() {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex gap-3">
-                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-amber-700">✓</span>
                     </div>
                     <span className="text-sm text-foreground">Accept delivery jobs and manage schedule</span>
                   </div>
                   <div className="flex gap-3">
-                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-amber-700">✓</span>
                     </div>
                     <span className="text-sm text-foreground">Earn money per delivery completed</span>
                   </div>
                   <div className="flex gap-3">
-                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-blue-700">✓</span>
+                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-amber-700">✓</span>
                     </div>
                     <span className="text-sm text-foreground">Real-time tracking and customer ratings</span>
                   </div>
@@ -182,7 +250,7 @@ export default function RoleSelectionPage() {
 
                 <Button
                   onClick={handleBecomeRider}
-                  className="w-full bg-secondary hover:bg-secondary/90 h-11 flex items-center justify-center gap-2 group-hover:gap-3 transition-all"
+                  className="w-full bg-amber-600 hover:bg-amber-700 h-11 flex items-center justify-center gap-2 group-hover:gap-3 transition-all"
                 >
                   Get Started
                   <ChevronRight className="w-4 h-4" />
@@ -195,8 +263,8 @@ export default function RoleSelectionPage() {
           <Card className="p-6 bg-blue-50 border border-blue-200">
             <h3 className="font-semibold text-blue-900 mb-3">Can I switch roles later?</h3>
             <p className="text-sm text-blue-800">
-              Yes! You can become both a seller and a rider. After completing one registration, you can access the role
-              selection page again to register for the other role.
+              Yes! You can become a seller, vendor, or rider. After completing one registration, you can access the role
+              selection page again to register for additional roles.
             </p>
           </Card>
         </div>

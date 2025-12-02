@@ -71,6 +71,14 @@ const itemSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  promotedAt: {
+    type: Date,
+    default: null,
+  },
+  promotedUntil: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

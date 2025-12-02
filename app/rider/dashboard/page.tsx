@@ -5,6 +5,8 @@ import { useDeliveries, useRiderEarnings } from "@/lib/rider-hooks"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { VerificationStatusCard } from "@/components/rider/verification-status-card"
 import { Package, DollarSign, TrendingUp, Star } from "lucide-react"
+import UserMessagesPanel from "@/components/user-messages-panel"
+import ReferralPanel from "@/components/referral-panel"
 
 export default function RiderDashboardPage() {
   const { rider } = useRiderAuth()
@@ -60,6 +62,26 @@ export default function RiderDashboardPage() {
           )
         })}
       </div>
+
+      {/* Referral Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Referral Program</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReferralPanel />
+        </CardContent>
+      </Card>
+
+      {/* Messages Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Messages</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserMessagesPanel />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

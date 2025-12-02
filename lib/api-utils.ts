@@ -27,12 +27,15 @@ export async function handleApiResponse(response: Response, endpoint: string) {
       status: response.status,
       statusText: response.statusText,
       url: response.url,
+      contentType,
     })
 
     throw new Error(
-      `API endpoint not found: ${endpoint}. ` +
-        `This usually means the backend is not deployed or NEXT_PUBLIC_API_URL is incorrect. ` +
-        `Expected JSON but received HTML (likely a 404 page).`,
+      `API Connection Failed: Backend not deployed or endpoint incorrect. ` +
+        `Tried to reach: ${response.url}. ` +
+        `Please ensure: 1) Backend server is running, ` +
+        `2) NEXT_PUBLIC_API_URL is set correctly (currently: ${getApiUrl()}), ` +
+        `3) The endpoint exists on your backend.`,
     )
   }
 
@@ -47,7 +50,7 @@ export async function handleApiResponse(response: Response, endpoint: string) {
         error: data.error || data.message,
       })
 
-      throw new Error(data.error || data.message || `HTTP ${response.status}`)
+      throw new Error(data.error || data.message || `HTTP ${response.status}: ${response.statusText}`)
     }
 
     return data
@@ -60,11 +63,11 @@ export async function handleApiResponse(response: Response, endpoint: string) {
       })
 
       throw new Error(
-        `Failed to parse API response from ${endpoint}. ` +
-          `The server returned invalid JSON. This typically means: ` +
-          `1) The backend API is not deployed at this URL, ` +
+        `Invalid JSON response from ${endpoint}. ` +
+          `This typically means: ` +
+          `1) Backend API is not deployed at ${getApiUrl()}, ` +
           `2) CORS is blocking the request, or ` +
-          `3) The endpoint doesn't exist.`,
+          `3) The endpoint doesn't exist on the backend.`,
       )
     }
     throw error
@@ -86,7 +89,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
 
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // Increased timeout to 30 seconds
 
     const response = await fetch(url, {
       ...options,
@@ -105,12 +108,13 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
       console.error("[v0] API Timeout:", endpoint)
       throw new Error(
         `Request timeout for ${endpoint}. ` +
-          `The backend server is not responding. ` +
-          `Please verify NEXT_PUBLIC_API_URL is set correctly.`,
+          `The backend server at ${apiUrl} is not responding. ` +
+          `Please verify: 1) Backend server is running, ` +
+          `2) NEXT_PUBLIC_API_URL is correct.`,
       )
     }
 
-    if (error.message?.includes("Failed to fetch")) {
+    if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
       console.error("[v0] Network Error:", {
         endpoint,
         apiUrl,
@@ -118,10 +122,12 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
       })
 
       throw new Error(
-        `Network error: Unable to reach backend at ${apiUrl}. ` +
-          `Please verify: 1) Backend is deployed, ` +
-          `2) NEXT_PUBLIC_API_URL environment variable is correct, ` +
-          `3) CORS is properly configured on backend.`,
+        `Cannot connect to backend at ${apiUrl}. ` +
+          `Please verify: ` +
+          `1) Backend server is running and accessible, ` +
+          `2) NEXT_PUBLIC_API_URL environment variable is correct (current: ${apiUrl}), ` +
+          `3) No firewall or network issues blocking the connection, ` +
+          `4) CORS is properly configured on backend.`,
       )
     }
 
@@ -142,24 +148,21 @@ export function validateApiConfig(): {
   const backendUrl = getBackendUrl()
   const warnings: string[] = []
 
-  // Check if using localhost
-  if (apiUrl.includes("localhost")) {
+  // Check if using localhost in production
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && apiUrl.includes("localhost")) {
     warnings.push(
-      "Using localhost API URL. This will not work in production. " +
-        "Set NEXT_PUBLIC_API_URL environment variable to your backend URL.",
-    )
-  }
-
-  // Check if using old domain
-  if (apiUrl.includes("odiya")) {
-    warnings.push(
-      'API URL contains old domain "odiya". ' + "Update NEXT_PUBLIC_API_URL to point to new backend domain.",
+      "⚠️ Production app is pointing to localhost. " +
+        "Set NEXT_PUBLIC_API_URL environment variable to your deployed backend URL.",
     )
   }
 
   // Check if properly formatted
   if (!apiUrl.endsWith("/api")) {
-    warnings.push("API URL should end with /api. " + `Current value: ${apiUrl}`)
+    warnings.push(`⚠️ API URL should end with /api. Current value: ${apiUrl}`)
+  }
+
+  if (!apiUrl.startsWith("http://") && !apiUrl.startsWith("https://")) {
+    warnings.push(`⚠️ API URL must start with http:// or https://. Current value: ${apiUrl}`)
   }
 
   const isValid = warnings.length === 0
@@ -169,7 +172,68 @@ export function validateApiConfig(): {
     backendUrl,
     isValid,
     warnings,
+    environment: typeof window !== "undefined" ? window.location.hostname : "server",
   })
 
   return { isValid, apiUrl, backendUrl, warnings }
+}
+
+export async function testApiConnection(): Promise<{
+  connected: boolean
+  message: string
+  details?: any
+}> {
+  try {
+    const apiUrl = getApiUrl()
+    console.log("[v0] Testing API connection to:", apiUrl)
+
+    const response = await fetch(`${apiUrl}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    const contentType = response.headers.get("content-type")
+
+    if (contentType?.includes("text/html")) {
+      return {
+        connected: false,
+        message: `Backend returned HTML (404 page). Backend not deployed or endpoint incorrect.`,
+        details: {
+          status: response.status,
+          contentType,
+          url: response.url,
+        },
+      }
+    }
+
+    if (response.ok) {
+      const data = await response.json()
+      return {
+        connected: true,
+        message: "Successfully connected to backend API",
+        details: data,
+      }
+    }
+
+    return {
+      connected: false,
+      message: `Backend responded with error: ${response.status} ${response.statusText}`,
+      details: {
+        status: response.status,
+        statusText: response.statusText,
+      },
+    }
+  } catch (error: any) {
+    console.error("[v0] Connection test failed:", error)
+    return {
+      connected: false,
+      message: `Failed to connect to backend: ${error.message}`,
+      details: {
+        error: error.message,
+        apiUrl: getApiUrl(),
+      },
+    }
+  }
 }

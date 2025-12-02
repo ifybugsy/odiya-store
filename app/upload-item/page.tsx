@@ -1,8 +1,9 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+
+import type React from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
@@ -43,7 +44,7 @@ interface ImagePreview {
 }
 
 export default function UploadItemPage() {
-  const { user, token } = useAuth()
+  const { user, token, updateUserRole, isLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -58,6 +59,34 @@ export default function UploadItemPage() {
     location: "",
     condition: "Good",
   })
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      checkVendorStatus()
+    }
+  }, [user, isLoading, router])
+
+  const checkVendorStatus = async () => {
+    if (!user || !token) return
+
+    try {
+      // Check if user has vendor profile
+      const vendorRes = await fetch(`${API_URL}/vendors/my-store/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (vendorRes.ok) {
+        const vendorData = await vendorRes.json()
+        // If user is an approved vendor, they automatically have seller rights
+        if (vendorData.status === "approved" && !user.isSeller) {
+          console.log("[v0] User is approved vendor, updating seller status")
+          await updateUserRole({ isSeller: true })
+        }
+      }
+    } catch (error) {
+      console.log("[v0] No vendor profile found or error checking:", error)
+    }
+  }
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -288,22 +317,22 @@ export default function UploadItemPage() {
           const btn = document.getElementById(
             `copy${field === "accountNumber" ? "Account" : "Name"}Btn`,
           ) as HTMLButtonElement
-          const text = document.getElementById(
+          const textElement = document.getElementById(
             `copy${field === "accountNumber" ? "Account" : "Name"}Text`,
           ) as HTMLSpanElement
           const icon = document.getElementById(
             `copy${field === "accountNumber" ? "Account" : "Name"}Icon`,
           ) as SVGElement
 
-          if (btn && text && icon) {
+          if (btn && textElement && icon) {
             btn.style.background = "#10b981"
-            text.textContent = "Copied!"
+            textElement.textContent = "Copied!"
             icon.innerHTML =
               '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>'
 
             setTimeout(() => {
               btn.style.background = "#3b82f6"
-              text.textContent = "Copy"
+              textElement.textContent = "Copy"
               icon.innerHTML =
                 '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>'
             }, 2000)
@@ -330,11 +359,20 @@ export default function UploadItemPage() {
       <>
         <Navbar />
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="p-6 text-center">
-            <p className="mb-4">You need to be a seller to upload items</p>
-            <Button onClick={() => router.push("/become-seller")} className="bg-primary hover:bg-primary/90">
-              Become a Seller
-            </Button>
+          <Card className="p-6 text-center max-w-md">
+            <p className="mb-4 text-foreground font-semibold">You need to be a seller to upload items</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              If you're an approved vendor, you already have seller permissions. Please refresh the page or log out and
+              log back in to update your session.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90">
+                Refresh Page
+              </Button>
+              <Button onClick={() => router.push("/become-seller")} variant="outline">
+                Become a Seller
+              </Button>
+            </div>
           </Card>
         </div>
       </>
@@ -450,7 +488,7 @@ export default function UploadItemPage() {
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="w-full" />
                   <p className="text-sm text-muted-foreground mt-2">Click to upload images (Max 100MB per file)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently</p>
+                  <p className="text-xs text-muted-foreground mt-1">Images are stored permanently in Vercel Blob</p>
                 </div>
 
                 {uploadProgress > 0 && (
@@ -461,7 +499,7 @@ export default function UploadItemPage() {
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Uploading... {uploadProgress}%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Uploading to Vercel Blob: {uploadProgress}%</p>
                   </div>
                 )}
 

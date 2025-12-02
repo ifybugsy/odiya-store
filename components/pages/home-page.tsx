@@ -7,6 +7,8 @@ import ItemCard from "@/components/item-card"
 import HeroSlider from "@/components/hero-slider"
 import CategoryGrid from "@/components/category-grid"
 import PopularAdsSection from "@/components/popular-ads-section"
+import FeaturedVendorsSection from "@/components/featured-vendors-section"
+import SponsorsSection from "@/components/sponsors-section"
 import { Search, Filter, AlertCircle } from "lucide-react"
 import { apiRequest, validateApiConfig } from "@/lib/api-utils"
 
@@ -192,8 +194,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Browse Categories Section */}
-      <CategoryGrid selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+      {/* Browse Categories Section with Our Vendors integrated */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <CategoryGrid selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+      </section>
+
+      <SponsorsSection />
+
+      <FeaturedVendorsSection />
 
       {/* Popular Ads Section - Shows items related to selected category or all items */}
       <PopularAdsSection selectedCategory={selectedCategory} />

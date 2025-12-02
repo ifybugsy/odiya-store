@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Star, Phone } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star, Phone, Sparkles } from "lucide-react"
 import { SaveButton } from "@/components/save-button"
 import { getUserInitials } from "@/lib/user-utils"
 import { getImageUrl, handleImageError } from "@/lib/image-utils"
@@ -60,7 +60,6 @@ export default function ItemCard({ item }: { item: any }) {
       if (res.ok) {
         const data = await res.json()
         setContactCount(data.contactCount)
-        console.log("[v0] Contact tracked. New count:", data.contactCount)
       }
     } catch (error) {
       console.error("[v0] Failed to track contact:", error)
@@ -75,6 +74,13 @@ export default function ItemCard({ item }: { item: any }) {
   const sellerRating = item.sellerId?.rating || 0
   const sellerProfileImage = item.sellerId?.profileImage
   const badge = item.sellerId ? <SellerBadgeComponent seller={item.sellerId} size="sm" /> : null
+
+  const isCurrentlyPromoted =
+    item.isPromoted || // Admin-promoted items
+    (item.isBoosted && // Boost system promoted items
+      item.boostStatus === "approved" &&
+      item.boostExpiresAt &&
+      new Date(item.boostExpiresAt) > new Date())
 
   return (
     <>
@@ -122,16 +128,30 @@ export default function ItemCard({ item }: { item: any }) {
               </>
             )}
 
-            <Badge className="absolute top-2 right-2 bg-primary">{item.category || "General"}</Badge>
+            {isCurrentlyPromoted && (
+              <Badge className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white border-0 shadow-lg font-bold flex items-center gap-1 z-10 px-3 py-1.5 text-xs animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 fill-white" />
+                PROMOTED
+              </Badge>
+            )}
+
+            <Badge
+              className={`absolute ${isCurrentlyPromoted ? "top-11" : "top-2"} right-2 bg-primary z-10 px-3 py-1.5 text-xs`}
+            >
+              {item.category || "General"}
+            </Badge>
           </div>
           <div className="p-3">
             <h3 className="font-semibold text-sm line-clamp-2">{item.title || "Untitled Item"}</h3>
             <p className="text-primary font-bold text-lg my-2">{formattedPrice}</p>
-            {item.isPromoted && (
-              <div className="mb-3 bg-gradient-to-r from-pink-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md inline-block">
+
+            {isCurrentlyPromoted && (
+              <div className="mb-2 bg-gradient-to-r from-pink-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md inline-flex items-center gap-1">
+                <Star className="w-3 h-3 fill-white" />
                 Promoted
               </div>
             )}
+
             <p className="text-xs text-muted-foreground">{item.location || "Location not specified"}</p>
             {item.condition && (
               <div className="mt-2">
@@ -157,9 +177,16 @@ export default function ItemCard({ item }: { item: any }) {
               >
                 {getUserInitials(sellerFirstName, sellerLastName)}
               </div>
-              <p className="text-xs truncate flex-1">
-                {sellerFirstName} {sellerLastName}
-              </p>
+              <div className="flex-1">
+                <p className="text-xs truncate">
+                  {sellerFirstName} {sellerLastName}
+                </p>
+                {item.sellerId?.createdAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Joined bugsymart since {new Date(item.sellerId.createdAt).getFullYear()}
+                  </p>
+                )}
+              </div>
               {badge}
               {sellerRating > 0 && (
                 <div className="flex items-center gap-0.5">

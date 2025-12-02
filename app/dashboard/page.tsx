@@ -1,14 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
-import { LogOut, Plus } from 'lucide-react'
+import { LogOut, Plus, Heart } from "lucide-react"
+import BoostButtonSeller from "@/components/boost-button-seller"
+import UserMessagesPanel from "@/components/user-messages-panel"
+import ReferralPanel from "@/components/referral-panel"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
@@ -19,34 +22,34 @@ export default function DashboardPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const loadData = async () => {
+    try {
+      const [profileRes, itemsRes] = await Promise.all([
+        fetch(`${API_URL}/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/users/my-items`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ])
+
+      if (profileRes.ok) {
+        setProfile(await profileRes.json())
+      }
+      if (itemsRes.ok) {
+        setItems(await itemsRes.json())
+      }
+    } catch (error) {
+      console.error("Failed to load data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!user || !token) {
       router.push("/login")
       return
-    }
-
-    const loadData = async () => {
-      try {
-        const [profileRes, itemsRes] = await Promise.all([
-          fetch(`${API_URL}/users/profile`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_URL}/users/my-items`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ])
-
-        if (profileRes.ok) {
-          setProfile(await profileRes.json())
-        }
-        if (itemsRes.ok) {
-          setItems(await itemsRes.json())
-        }
-      } catch (error) {
-        console.error("Failed to load data:", error)
-      } finally {
-        setLoading(false)
-      }
     }
 
     loadData()
@@ -76,7 +79,12 @@ export default function DashboardPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold">Dashboard</h1>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Welcome back,</p>
+                <h1 className="text-3xl font-bold text-foreground">
+                  {profile?.firstName} {profile?.lastName}
+                </h1>
+              </div>
               <div className="flex gap-3">
                 {!user?.isSeller && (
                   <Link href="/become-seller">
@@ -105,7 +113,8 @@ export default function DashboardPage() {
                         />
                       ) : (
                         <div className="text-4xl font-bold text-muted-foreground">
-                          {profile.firstName?.[0]}{profile.lastName?.[0]}
+                          {profile.firstName?.[0]}
+                          {profile.lastName?.[0]}
                         </div>
                       )}
                     </div>
@@ -132,11 +141,19 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              <Link href="/profile/edit">
-                <Button variant="outline" className="mt-4 bg-transparent">
-                  Edit Profile
-                </Button>
-              </Link>
+              <div className="flex gap-2 mt-4">
+                <Link href="/profile/edit">
+                  <Button variant="outline" className="bg-transparent">
+                    Edit Profile
+                  </Button>
+                </Link>
+                <Link href="/dashboard/followed-vendors">
+                  <Button variant="outline" className="bg-transparent flex items-center gap-2">
+                    <Heart className="w-4 h-4" />
+                    Followed Vendors
+                  </Button>
+                </Link>
+              </div>
             </Card>
 
             {/* Seller Stats */}
@@ -156,6 +173,18 @@ export default function DashboardPage() {
                 </Card>
               </div>
             )}
+
+            {/* Referral Section */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Referral Program</h2>
+              <ReferralPanel />
+            </div>
+
+            {/* Messages Section */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Messages</h2>
+              <UserMessagesPanel />
+            </div>
 
             {/* Items Section */}
             <div className="mb-8">
@@ -203,6 +232,17 @@ export default function DashboardPage() {
                       <div className="p-4">
                         <h3 className="font-semibold line-clamp-2">{item.title}</h3>
                         <p className="text-primary font-bold text-lg my-2">₦{item.price.toLocaleString()}</p>
+                        {!item.isSold && item.status === "approved" && (
+                          <div className="mb-3">
+                            <BoostButtonSeller
+                              itemId={item._id}
+                              isPromoted={
+                                item.isPromoted && item.promotedUntil && new Date(item.promotedUntil) > new Date()
+                              }
+                              onBoostSuccess={() => loadData()}
+                            />
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           {!item.isSold && (
                             <>

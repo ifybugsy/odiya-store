@@ -2,7 +2,6 @@
 
 import React from "react"
 import { useRouter } from "next/navigation"
-
 import { Card } from "@/components/ui/card"
 import {
   Smartphone,
@@ -19,6 +18,8 @@ import {
   Hammer,
   PawPrint,
   Wine,
+  Sprout,
+  Store,
 } from "lucide-react"
 
 interface Category {
@@ -28,9 +29,27 @@ interface Category {
   icon: React.ReactNode
   color: string
   bgColor: string
+  isVendorLink?: boolean
 }
 
 const CATEGORIES: Category[] = [
+  {
+    id: "become-vendor",
+    displayName: "Become a Vendor",
+    apiName: "Become a Vendor",
+    icon: <Store className="w-12 h-12" />,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    isVendorLink: true,
+  },
+  {
+    id: "home-garden",
+    displayName: "Home & Garden",
+    apiName: "Home & Garden",
+    icon: <Sprout className="w-12 h-12" />,
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-50",
+  },
   {
     id: "vehicles",
     displayName: "Vehicles",
@@ -163,6 +182,7 @@ export default function CategoryGrid({ selectedCategory, onCategoryChange }: Cat
 
   const getCategorySlug = (id: string): string => {
     const slugMap: Record<string, string> = {
+      "home-garden": "home-garden",
       vehicles: "vehicles",
       phones: "phones-tablets",
       electronics: "electronics-computers",
@@ -183,14 +203,18 @@ export default function CategoryGrid({ selectedCategory, onCategoryChange }: Cat
   }
 
   const handleCategoryClick = (category: Category) => {
-    const slug = getCategorySlug(category.id)
-    router.push(`/category/${slug}`)
+    if (category.isVendorLink) {
+      router.push("/vendor-registration")
+    } else {
+      const slug = getCategorySlug(category.id)
+      router.push(`/category/${slug}`)
+    }
   }
 
   return (
     <section className="bg-white py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-foreground mb-8 text-balance">Browse Categories</h2>
+        <h2 className="text-2xl font-bold text-foreground text-balance mb-8">Browse Categories</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {CATEGORIES.map((category) => (

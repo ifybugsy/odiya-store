@@ -4,7 +4,6 @@ import { authenticateToken, isSeller } from "../middleware/auth.js"
 
 const router = express.Router()
 
-// Get all approved items with pagination and infinite scroll
 router.get("/", async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
@@ -27,15 +26,74 @@ router.get("/", async (req, res) => {
       filter.$or = [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }]
     }
 
-    const items = await Item.find(filter)
-      .populate("sellerId", "firstName lastName phone profileImage rating ratingCount contactCount")
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip((page - 1) * limit)
+    const items = await Item.aggregate([
+      { $match: filter },
+      {
+        $addFields: {
+          // Calculate promotion score
+          isCurrentlyPromoted: {
+            $cond: {
+              if: {
+                $and: [{ $eq: ["$isPromoted", true] }, { $gte: ["$promotedUntil", new Date()] }],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+      // Sort by promotion status first, then by creation date
+      { $sort: { isCurrentlyPromoted: -1, createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      // Lookup seller information
+      {
+        $lookup: {
+          from: "users",
+          localField: "sellerId",
+          foreignField: "_id",
+          as: "sellerInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$sellerInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          category: 1,
+          price: 1,
+          images: 1,
+          location: 1,
+          condition: 1,
+          status: 1,
+          isPromoted: 1,
+          promotedAt: 1,
+          promotedUntil: 1,
+          views: 1,
+          createdAt: 1,
+          sellerId: {
+            _id: "$sellerInfo._id",
+            firstName: "$sellerInfo.firstName",
+            lastName: "$sellerInfo.lastName",
+            phone: "$sellerInfo.phone",
+            profileImage: "$sellerInfo.profileImage",
+            rating: "$sellerInfo.rating",
+            ratingCount: "$sellerInfo.ratingCount",
+            contactCount: "$sellerInfo.contactCount",
+          },
+        },
+      },
+    ])
 
     const total = await Item.countDocuments(filter)
 
-    console.log(`[Backend] Fetched ${items.length} items, first item ID:`, items[0]?._id)
+    console.log(`[Backend] Fetched ${items.length} items with promoted priority, first item ID:`, items[0]?._id)
 
     res.json({
       items,
@@ -272,6 +330,34 @@ router.put("/:id/promoted", authenticateToken, async (req, res) => {
 
     res.json({
       message: "Promoted status updated",
+      item,
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put("/:id/promote", authenticateToken, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: "Only admins can manage promotions" })
+    }
+
+    const { duration = 30 } = req.body // Duration in days
+    const item = await Item.findById(req.params.id)
+
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" })
+    }
+
+    item.isPromoted = !item.isPromoted
+    item.promotedAt = item.isPromoted ? new Date() : null
+    item.promotedUntil = item.isPromoted ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000) : null
+
+    await item.save()
+
+    res.json({
+      message: `Item ${item.isPromoted ? "promoted" : "unpromoted"} successfully`,
       item,
     })
   } catch (error) {

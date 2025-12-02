@@ -21,6 +21,7 @@ interface AuthContextType {
   logout: () => void
   setUser: (user: User) => void
   refreshAuth: (user: User) => void
+  updateUserRole: (updates: Partial<User>) => Promise<void>
   isLoading: boolean
 }
 
@@ -39,17 +40,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { user, token } = JSON.parse(stored)
         setUserState(user)
         setToken(token)
+        refreshUserData(token)
       } catch (e) {
-        console.error("[v0] Failed to load auth:", e)
+        console.error("Failed to load auth:", e)
       }
     }
     setIsLoading(false)
   }, [])
 
+  const refreshUserData = async (authToken: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+      const response = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log("[v0] User data refreshed. isSeller:", data.user.isSeller)
+
+        const updatedUser = {
+          id: data.user.id,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          email: data.user.email,
+          isSeller: data.user.isSeller,
+          isAdmin: data.user.isAdmin,
+          isRider: data.user.isRider,
+        }
+
+        setUserState(updatedUser)
+        localStorage.setItem("auth", JSON.stringify({ token: data.token, user: updatedUser }))
+        setToken(data.token)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to refresh user data:", error)
+    }
+  }
+
   const login = (newToken: string, newUser: User) => {
     setToken(newToken)
     setUserState(newUser)
     localStorage.setItem("auth", JSON.stringify({ token: newToken, user: newUser }))
+    refreshUserData(newToken)
   }
 
   const logout = () => {
@@ -66,18 +102,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshAuth = (newUser: User) => {
-    console.log("[v0] Refreshing auth context:", {
-      oldRoles: { isSeller: user?.isSeller, isRider: user?.isRider },
-      newRoles: { isSeller: newUser.isSeller, isRider: newUser.isRider },
-    })
     setUserState(newUser)
     if (token) {
       localStorage.setItem("auth", JSON.stringify({ token, user: newUser }))
     }
   }
 
+  const updateUserRole = async (updates: Partial<User>) => {
+    if (!token || !user) return
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+      const response = await fetch(`${API_URL}/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        console.error("Failed to fetch updated user profile")
+        return
+      }
+
+      const freshUserData = await response.json()
+
+      // Update local state with fresh backend data
+      const updatedUser = {
+        id: freshUserData._id || freshUserData.id,
+        firstName: freshUserData.firstName,
+        lastName: freshUserData.lastName,
+        email: freshUserData.email,
+        isSeller: freshUserData.isSeller,
+        isAdmin: freshUserData.isAdmin,
+        isRider: freshUserData.isRider,
+      }
+
+      setUserState(updatedUser)
+      localStorage.setItem("auth", JSON.stringify({ token, user: updatedUser }))
+    } catch (error) {
+      console.error("Error updating user role:", error)
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setUser, refreshAuth, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, setUser, refreshAuth, updateUserRole, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

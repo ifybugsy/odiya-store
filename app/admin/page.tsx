@@ -3,7 +3,21 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Ban, Users, Package, AlertCircle, LayoutDashboard, Settings, LogOut, Bell, X, Truck } from "lucide-react"
+import {
+  Users,
+  Package,
+  AlertCircle,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  Bell,
+  X,
+  Truck,
+  Store,
+  MessageSquare,
+  Star,
+  TrendingUp,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
@@ -19,8 +33,11 @@ function AdminSidebar({ onLogout }: { onLogout: () => void }) {
   const menuItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/items", label: "Item Management", icon: Package },
+    { href: "/admin/vendors", label: "Vendors", icon: Store },
     { href: "/admin/users", label: "User Management", icon: Users },
-    { href: "/admin/reviews", label: "Reviews & Ratings", icon: Package },
+    { href: "/admin/boosts", label: "Boost Requests", icon: TrendingUp },
+    { href: "/admin/messages", label: "Messages", icon: MessageSquare },
+    { href: "/admin/ratings", label: "Ratings & Reviews", icon: Star },
     { href: "/admin/activity", label: "Activity Tracking", icon: AlertCircle },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ]
@@ -133,7 +150,7 @@ function DashboardHeader({ user, title, description }: any) {
 
         <Link href="/admin/settings">
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-            <Settings className="w-5 h-5" />
+            <Star className="w-5 h-5" />
           </Button>
         </Link>
       </div>
@@ -250,7 +267,9 @@ function ApprovedItemsSection({ items, onTogglePromoted, isLoading = false }: an
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
                 {item.isPromoted && (
-                  <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white">Promoted</Badge>
+                  <Badge className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white animate-pulse">
+                    ✨ Promoted
+                  </Badge>
                 )}
               </div>
               <p className="text-muted-foreground text-sm mb-3">{item.description?.substring(0, 100)}...</p>
@@ -269,12 +288,12 @@ function ApprovedItemsSection({ items, onTogglePromoted, isLoading = false }: an
               disabled={isLoading}
               className={`transition-all ${
                 item.isPromoted
-                  ? "bg-gray-500 hover:bg-gray-600 text-white"
-                  : "bg-orange-600 hover:bg-orange-700 text-white"
+                  ? "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white"
+                  : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white animate-bounce"
               }`}
               variant="default"
             >
-              {item.isPromoted ? "✓ Promoted" : "🚀 Promote"}
+              {item.isPromoted ? "✓ Promoted" : "🚀 Promote Now"}
             </Button>
           </div>
         </Card>
@@ -318,6 +337,8 @@ export default function AdminPage() {
     }
 
     loadData()
+    const interval = setInterval(loadData, 30000)
+    return () => clearInterval(interval)
   }, [user, token, isLoading, router])
 
   const loadData = async () => {
@@ -343,7 +364,7 @@ export default function AdminPage() {
       if (approvedItemsRes.ok) setApprovedItems(await approvedItemsRes.json())
       if (usersRes.ok) setUsers(await usersRes.json())
     } catch (error) {
-      console.error("Failed to load admin data:", error)
+      console.error("[v0] Failed to load admin data:", error)
     } finally {
       setLoading(false)
     }
@@ -470,7 +491,7 @@ export default function AdminPage() {
         <DashboardHeader
           user={user}
           title="Dashboard"
-          description="Welcome to your admin panel. Manage items, users, and platform metrics."
+          description="Welcome to your admin panel. Manage items, vendors, users, and platform metrics."
         />
 
         {/* Content */}
@@ -598,71 +619,33 @@ export default function AdminPage() {
                 <div className="space-y-4">
                   {users.length === 0 ? (
                     <Card className="p-12 text-center">
-                      <Users className="w-12 h-12 text-blue-600 mx-auto mb-3 opacity-50" />
+                      <Users className="w-12 h-12 text-gray-600 mx-auto mb-3 opacity-50" />
                       <p className="text-muted-foreground text-lg font-medium">No users found</p>
                     </Card>
                   ) : (
-                    <Card className="overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/50 border-b border-border">
-                            <tr>
-                              <th className="text-left py-3 px-4 font-semibold">Name</th>
-                              <th className="text-left py-3 px-4 font-semibold">Email</th>
-                              <th className="text-left py-3 px-4 font-semibold">Type</th>
-                              <th className="text-left py-3 px-4 font-semibold">Status</th>
-                              <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {users.map((user: any) => (
-                              <tr key={user._id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                                <td className="py-3 px-4 font-medium">
-                                  {user.firstName} {user.lastName}
-                                </td>
-                                <td className="py-3 px-4 text-muted-foreground text-xs">{user.email}</td>
-                                <td className="py-3 px-4">
-                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">
-                                    {user.isSeller ? "Seller" : "Buyer"}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <span
-                                    className={`text-xs px-2 py-1 rounded font-medium ${
-                                      user.isSuspended ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
-                                    }`}
-                                  >
-                                    {user.isSuspended ? "Suspended" : "Active"}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-4">
-                                  {user.isSuspended ? (
-                                    <Button
-                                      onClick={() => handleUnsuspendUser(user._id)}
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      Unsuspend
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      onClick={() => handleSuspendUser(user._id)}
-                                      size="sm"
-                                      variant="destructive"
-                                      className="text-xs flex items-center gap-1"
-                                    >
-                                      <Ban className="w-3 h-3" />
-                                      Suspend
-                                    </Button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Card>
+                    users.map((user: any) => (
+                      <Card key={user._id} className="p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-bold">
+                              {user.firstName} {user.lastName}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            {user.isSuspended ? (
+                              <Button onClick={() => handleUnsuspendUser(user._id)} size="sm" className="bg-green-600">
+                                Unsuspend
+                              </Button>
+                            ) : (
+                              <Button onClick={() => handleSuspendUser(user._id)} size="sm" variant="destructive">
+                                Suspend
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))
                   )}
                 </div>
               )}

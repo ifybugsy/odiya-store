@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,19 +8,29 @@ import { Card } from "@/components/ui/card"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { useAuth } from "@/lib/auth-context"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { useVendorAuth } from "@/lib/vendor-auth-context"
+import { AlertCircle, Loader2, ShoppingBag, Building2 } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-const API_TIMEOUT = 15000 // 15 seconds timeout
+const API_TIMEOUT = 15000
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
+  // CHANGE: added userRole state to select between Vendor, Seller, or User
+  const [userRole, setUserRole] = useState<"user" | "seller" | "vendor">("user")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [debugInfo, setDebugInfo] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login } = useAuth()
+  const { loginVendor } = useVendorAuth()
+
+  useEffect(() => {
+    if (searchParams.get("role") === "vendor") {
+      setUserRole("vendor")
+    }
+  }, [searchParams])
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -42,87 +52,157 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const endpoint = isSignUp ? "/auth/register" : "/auth/login"
-      const normalizedEmail = formData.email.toLowerCase().trim()
+      // CHANGE: handle vendor login/signup separately
+      if (userRole === "vendor") {
+        const endpoint = isSignUp ? "/auth/vendor/register" : "/auth/vendor/login"
+        const normalizedEmail = formData.email.toLowerCase().trim()
 
-      console.log("[v0] Login attempt:", { endpoint, email: normalizedEmail, apiUrl: API_URL })
+        console.log("[v0] Vendor authentication attempt:", { endpoint, email: normalizedEmail })
 
-      // Create abort controller for timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
 
-      if (isSignUp) {
-        if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match")
-          setLoading(false)
-          return
+        if (isSignUp) {
+          if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match")
+            setLoading(false)
+            return
+          }
+
+          const response = await fetch(`${API_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: normalizedEmail,
+              phone: formData.phone,
+              password: formData.password,
+            }),
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+          const data = await response.json()
+
+          if (!response.ok) {
+            console.error("[v0] Vendor registration failed:", { status: response.status, error: data.error })
+            setError(data.error || "Registration failed")
+            setDebugInfo(`Status: ${response.status}`)
+            setLoading(false)
+            return
+          }
+
+          console.log("[v0] Vendor registered successfully:", { email: data.vendor?.email })
+          loginVendor(data.token, data.vendor)
+        } else {
+          const response = await fetch(`${API_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: normalizedEmail,
+              password: formData.password,
+            }),
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+          const data = await response.json()
+
+          if (!response.ok) {
+            console.error("[v0] Vendor login failed:", { status: response.status, error: data.error })
+            setError(data.error || "Login failed")
+            setDebugInfo(`Status: ${response.status}`)
+            setLoading(false)
+            return
+          }
+
+          console.log("[v0] Vendor logged in successfully:", { email: data.vendor?.email })
+          loginVendor(data.token, data.vendor)
         }
 
-        const response = await fetch(`${API_URL}${endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: normalizedEmail,
-            phone: formData.phone,
-            password: formData.password,
-          }),
-          signal: controller.signal,
-        })
-
-        clearTimeout(timeoutId)
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          console.error("[v0] Registration failed:", { status: response.status, error: data.error })
-          setError(data.error || "Registration failed")
-          setDebugInfo(`Status: ${response.status}`)
-          setLoading(false)
-          return
-        }
-
-        console.log("[v0] Registration successful:", { email: data.user?.email })
-        login(data.token, data.user)
+        router.push("/vendor/dashboard")
       } else {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: normalizedEmail,
-            password: formData.password,
-          }),
-          signal: controller.signal,
-        })
+        // Original user/seller login flow
+        const endpoint = isSignUp ? "/auth/register" : "/auth/login"
+        const normalizedEmail = formData.email.toLowerCase().trim()
 
-        clearTimeout(timeoutId)
+        console.log("[v0] User authentication attempt:", { endpoint, email: normalizedEmail, role: userRole })
 
-        const data = await response.json()
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
 
-        if (!response.ok) {
-          console.error("[v0] Login failed:", { status: response.status, error: data.error })
-          setError(data.error || "Login failed")
-          setDebugInfo(`Status: ${response.status} - Check DevTools console (F12) for details`)
-          setLoading(false)
-          return
+        if (isSignUp) {
+          if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match")
+            setLoading(false)
+            return
+          }
+
+          const response = await fetch(`${API_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: normalizedEmail,
+              phone: formData.phone,
+              password: formData.password,
+            }),
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+          const data = await response.json()
+
+          if (!response.ok) {
+            console.error("[v0] Registration failed:", { status: response.status, error: data.error })
+            setError(data.error || "Registration failed")
+            setDebugInfo(`Status: ${response.status}`)
+            setLoading(false)
+            return
+          }
+
+          console.log("[v0] Registration successful:", { email: data.user?.email })
+          login(data.token, data.user)
+        } else {
+          const response = await fetch(`${API_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: normalizedEmail,
+              password: formData.password,
+            }),
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+          const data = await response.json()
+
+          if (!response.ok) {
+            console.error("[v0] Login failed:", { status: response.status, error: data.error })
+            setError(data.error || "Login failed")
+            setDebugInfo(`Status: ${response.status}`)
+            setLoading(false)
+            return
+          }
+
+          console.log("[v0] Login successful:", { email: data.user?.email })
+          login(data.token, data.user)
         }
 
-        console.log("[v0] Login successful:", { email: data.user?.email, isSeller: data.user?.isSeller })
-        login(data.token, data.user)
+        const redirect = searchParams.get("redirect") || "dashboard"
+        const from = searchParams.get("from")
+        const redirectPath = `/${redirect}${from ? `?from=${from}` : ""}`
+
+        console.log("[v0] Redirecting to:", redirectPath)
+        router.push(redirectPath)
       }
-
-      const redirect = searchParams.get("redirect") || "dashboard"
-      const from = searchParams.get("from")
-      const redirectPath = `/${redirect}${from ? `?from=${from}` : ""}`
-
-      console.log("[v0] Redirecting to:", redirectPath)
-      router.push(redirectPath)
     } catch (err: any) {
       console.error("[v0] Authentication error:", err)
 
       if (err.name === "AbortError") {
-        setError("Request timed out. Network may be slow. Please try again.")
+        setError("Request timed out. Backend may be slow. Please try again.")
         setDebugInfo("Timeout after 15 seconds - check if backend is running")
       } else {
         setError(err.message || "An error occurred")
@@ -143,8 +223,42 @@ export default function LoginPage() {
               {isSignUp ? "Create Account" : "Welcome Back"}
             </h1>
             <p className="text-center text-muted-foreground mt-2">
-              {isSignUp ? "Join Bugsy Mart today" : "Login to your account"}
+              {isSignUp ? "Join Odiya Store today" : "Login to your account"}
             </p>
+          </div>
+
+          {/* CHANGE: added role selection buttons */}
+          <div className="mb-6 flex gap-2">
+            <Button
+              type="button"
+              variant={userRole === "user" ? "default" : "outline"}
+              className="flex-1 flex items-center justify-center gap-2"
+              onClick={() => setUserRole("user")}
+              disabled={loading}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span className="hidden sm:inline">User</span>
+            </Button>
+            <Button
+              type="button"
+              variant={userRole === "seller" ? "default" : "outline"}
+              className="flex-1 flex items-center justify-center gap-2"
+              onClick={() => setUserRole("seller")}
+              disabled={loading}
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Seller</span>
+            </Button>
+            <Button
+              type="button"
+              variant={userRole === "vendor" ? "default" : "outline"}
+              className="flex-1 flex items-center justify-center gap-2"
+              onClick={() => setUserRole("vendor")}
+              disabled={loading}
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Vendor</span>
+            </Button>
           </div>
 
           {error && (
